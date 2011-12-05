@@ -65,6 +65,12 @@ config TEGRA_PCI
 
 comment "Tegra board type"
 
+config MACH_ADAM
+       bool "Notion Ink Adam TabletPC"
+       depends on ARCH_TEGRA_2x_SOC
+       help
+         Support for all TabletPCs based on the ADAM design.
+
 config MACH_HARMONY
        bool "Harmony board"
        depends on ARCH_TEGRA_2x_SOC
