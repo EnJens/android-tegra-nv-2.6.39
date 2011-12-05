@@ -547,4 +547,11 @@ config KEYBOARD_W90P910
 	  To compile this driver as a module, choose M here: the
 	  module will be called w90p910_keypad.
 
+config KEYBOARD_SO340010
+        boolean "SO340010 I2C Keyboard controller"
+        depends on ARCH_I2C
+        help
+                Say Y here if you want to enable SEARCH/HOME/MENU/BACK keys.
+
+
 endif
