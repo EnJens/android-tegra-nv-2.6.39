@@ -394,22 +394,30 @@ struct early_suspend adam_panel_early_suspender;
 
 static void adam_panel_early_suspend(struct early_suspend *h)
 {
-	if (num_registered_fb > 0)
-		fb_blank(registered_fb[0], FB_BLANK_POWERDOWN);
-#ifdef CONFIG_CPU_FREQ
-       cpufreq_save_default_governor();
-       cpufreq_set_conservative_governor();
+        unsigned i;
+
+        /* power down LCD, add use a black screen for HDMI */
+        if (num_registered_fb > 0)
+                fb_blank(registered_fb[0], FB_BLANK_POWERDOWN);
+        if (num_registered_fb > 1)
+                fb_blank(registered_fb[1], FB_BLANK_NORMAL);
+#ifdef CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
+        cpufreq_save_default_governor();
+        cpufreq_set_conservative_governor();
+        cpufreq_set_conservative_governor_param(
+                SET_CONSERVATIVE_GOVERNOR_UP_THRESHOLD,
+                SET_CONSERVATIVE_GOVERNOR_DOWN_THRESHOLD);
 #endif
 }
 
 static void adam_panel_late_resume(struct early_suspend *h)
 {
-	if (num_registered_fb > 0)
-		fb_blank(registered_fb[0], FB_BLANK_UNBLANK);
-
-#ifdef CONFIG_CPU_FREQ
-       cpufreq_restore_default_governor();
+        unsigned i;
+#ifdef CONFIG_TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
+        cpufreq_restore_default_governor();
 #endif
+        for (i = 0; i < num_registered_fb; i++)
+                fb_blank(registered_fb[i], FB_BLANK_UNBLANK);
 }
 #endif 
 
@@ -454,13 +462,14 @@ int __init adam_gpu_register_devices(void)
 	gpio_request(ADAM_LVDS_SHUTDOWN, "lvds_shdn");
 	gpio_direction_output(ADAM_LVDS_SHUTDOWN, 1);
 	
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
-	adam_panel_early_suspender.suspend = adam_panel_early_suspend;
-	adam_panel_early_suspender.resume = adam_panel_late_resume;
-	adam_panel_early_suspender.level = EARLY_SUSPEND_LEVEL_DISABLE_FB;
-	register_early_suspend(&adam_panel_early_suspender);
-#endif 
-	
+        adam_panel_early_suspender.suspend = adam_panel_early_suspend;
+        adam_panel_early_suspender.resume = adam_panel_late_resume;
+        adam_panel_early_suspender.level = EARLY_SUSPEND_LEVEL_DISABLE_FB;
+        register_early_suspend(&adam_panel_early_suspender);
+#endif
+
 	err = platform_add_devices(adam_gfx_devices,
 				   ARRAY_SIZE(adam_gfx_devices));
 				   
