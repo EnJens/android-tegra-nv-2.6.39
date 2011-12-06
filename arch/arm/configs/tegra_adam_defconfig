@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux/arm 2.6.39.4 Kernel Configuration
-# Tue Dec  6 10:57:20 2011
+# Tue Dec  6 19:08:07 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -1735,7 +1735,7 @@ CONFIG_VIDEO_HELPER_CHIPS_AUTO=y
 CONFIG_TEGRA_RPC=y
 CONFIG_TEGRA_AVP=y
 CONFIG_TEGRA_MEDIASERVER=y
-CONFIG_TEGRA_NVAVP=y
+# CONFIG_TEGRA_NVAVP is not set
 CONFIG_TEGRA_CAMERA=y
 # CONFIG_VIDEO_OV5650 is not set
 # CONFIG_VIDEO_OV9726 is not set
