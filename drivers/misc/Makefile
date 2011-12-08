@@ -55,3 +55,4 @@ obj-$(CONFIG_BCM4329_RFKILL)	+= bcm4329_rfkill.o
 obj-$(CONFIG_MPU_SENSORS_MPU3050)	+= mpu3050/
 obj-$(CONFIG_TEGRA_CRYPTO_DEV)	+= tegra-cryptodev.o
 obj-$(CONFIG_MAX1749_VIBRATOR)	+= max1749.o
+obj-$(CONFIG_SENSORS_MMC31XX)   += mmc31xx.o

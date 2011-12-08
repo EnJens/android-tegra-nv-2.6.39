@@ -25,6 +25,7 @@ struct tegra_sdhci_platform_data {
 	int wp_gpio;
 	int power_gpio;
 	int is_8bit;
+	int has_no_vreg;      /* 1=No voltage regulator */
 	struct mmc_platform_data mmc_data;
 };
 
