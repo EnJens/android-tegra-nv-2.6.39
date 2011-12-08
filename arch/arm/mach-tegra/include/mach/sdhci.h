@@ -27,6 +27,7 @@ struct tegra_sdhci_platform_data {
 	int is_8bit;
 	unsigned int max_clk_limit;
 	unsigned int tap_delay;
+	int has_no_vreg;      /* 1=No voltage regulator */
 	struct mmc_platform_data mmc_data;
 };
 

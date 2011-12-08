@@ -152,18 +152,21 @@ static struct tegra_sdhci_platform_data tegra_sdhci_platform_data2 = {
 	.cd_gpio = -1,
 	.wp_gpio = -1,
 	.power_gpio = -1,
+	.has_no_vreg = 1,
 };
 
 static struct tegra_sdhci_platform_data tegra_sdhci_platform_data3 = {
 	.cd_gpio = ADAM_SDHC_CD,
 	.wp_gpio = -1,
 	.power_gpio = ADAM_SDHC_POWER,
+	.has_no_vreg = 1,
 };
 
 static struct tegra_sdhci_platform_data tegra_sdhci_platform_data4 = {
 	.cd_gpio = -1,
 	.wp_gpio = -1,
 	.power_gpio = -1,
+	.has_no_vreg = 1,
 };
 
 
