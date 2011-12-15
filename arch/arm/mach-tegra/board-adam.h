@@ -23,7 +23,7 @@
 
 /* GPS and Magnetic sensor share the same enabling IO line */
 #define ADAM_GPSMAG_DISABLE  	TEGRA_GPIO_PV3 	/* 0= disabled */
-#define ADAM_3G_DISABLE		TEGRA_GPIO_PB0 /* 0 = disabled */
+#define ADAM_3G_DISABLE		TEGRA_GPIO_PJ2 /* 0 = disabled */
 #define ADAM_KEY_VOLUMEUP 	TEGRA_GPIO_PD4 	/* 0=pressed */
 #define ADAM_KEY_VOLUMEDOWN 	TEGRA_GPIO_PV4 	/* 0=pressed */
 #define ADAM_KEY_POWER 		TEGRA_GPIO_PV2 	/* 0=pressed */
@@ -77,7 +77,7 @@
 #define ALC5623_GP0		(ALC5623_GPIO_BASE)
 
 #define PMU_IRQ_BASE		(TEGRA_NR_IRQS)
-#define PMU_IRQ_RTC_ALM1 	(PMU_IRQ_BASE + TPS6586X_INT_RTC_ALM1)
+#define PMU_IRQ_RTC_ALM1 	(TPS6586X_INT_BASE + TPS6586X_INT_RTC_ALM1)
 
 #define	ADAM_ENABLE_VDD_VID	TEGRA_GPIO_PD1	/* 1=enabled.  Powers HDMI. Wait 500uS to let it stabilize before returning */
 

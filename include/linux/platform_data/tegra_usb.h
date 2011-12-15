@@ -44,4 +44,7 @@ struct tegra_otg_platform_data {
 	struct tegra_ehci_platform_data *ehci_pdata;
 };
 
+extern void tegra_otg_check_vbus_detection(void);
+extern void tegra_otg_set_host_mode(bool host_mode);
+
 #endif /* _TEGRA_USB_H_ */

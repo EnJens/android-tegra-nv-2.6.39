@@ -35,7 +35,7 @@
 #include <wl_iw.h>
 
 #define WL_ERROR(x) printf x
-#define WL_TRACE(x)
+#define WL_TRACE(x) printf x
 
 #ifdef CUSTOMER_HW
 extern  void bcm_wlan_power_off(int);
