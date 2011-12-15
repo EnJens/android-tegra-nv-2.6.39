@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  *
  */
-
+#define DEBUG 1
 #include <linux/resource.h>
 #include <linux/platform_device.h>
 #include <linux/wlan_plat.h>
@@ -98,12 +98,13 @@ struct tegra_sdhci_platform_data adam_wlan_data = {
 //        .force_hs = 0,
 	.mmc_data = {
         	.register_status_notify = adam_wifi_status_register,
-		.embedded_sdio = &embedded_sdio_data0,
-		.built_in = 1,
+//		.embedded_sdio = &embedded_sdio_data0,
+//		.built_in = 1,
 	},
 	.cd_gpio = -1,
 	.wp_gpio = -1,
 	.power_gpio = -1,
+	.has_no_vreg = 1,
 };
 
 /* Used to set the virtual CD of wifi adapter */
@@ -213,12 +214,6 @@ int __init adam_sdhci_register_devices(void)
 	tegra_sdhci_device3.dev.platform_data = &tegra_sdhci_platform_data3;
 	tegra_sdhci_device4.dev.platform_data = &tegra_sdhci_platform_data4;
 
-	gpio_request(tegra_sdhci_platform_data3.power_gpio, "sdhci3_power");
-	gpio_request(tegra_sdhci_platform_data3.cd_gpio, "sdhci3_cd");
-
-	gpio_direction_output(tegra_sdhci_platform_data3.power_gpio, 1);
-	gpio_direction_input(tegra_sdhci_platform_data3.cd_gpio);
-	
 	ret = platform_add_devices(adam_sdhci_devices, ARRAY_SIZE(adam_sdhci_devices));
 	adam_wifi_init();
 	return ret;

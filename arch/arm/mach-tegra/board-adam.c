@@ -51,6 +51,7 @@
 //#include <mach/tegra2_i2s.h>
 #include <mach/system.h>
 #include <mach/nvmap.h>
+
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,38)	
 #include <mach/suspend.h>
 #else
@@ -184,6 +185,8 @@ static void __init tegra_adam_init(void)
 	/* Register i2c devices - required for Power management and MUST be done before the power register */
 	adam_i2c_register_devices();
 
+	
+
 	/* Register the power subsystem - Including the poweroff handler - Required by all the others */
 	adam_power_register_devices();
 	
@@ -282,14 +285,9 @@ static void __init tegra_adam_fixup(struct machine_desc *desc,
 MACHINE_START(HARMONY, "harmony")
 	.boot_params	= 0x00000100,
 	.map_io         = tegra_map_common_io,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38)		
 	.init_early     = tegra_init_early,
-#else
-	.phys_io		= IO_APB_PHYS,
-	.io_pg_offst	= ((IO_APB_VIRT) >> 18) & 0xfffc,
-#endif
 	.init_irq       = tegra_init_irq,
-	.timer          = &tegra_timer, 	
+	.timer          = &tegra_timer,
 	.init_machine	= tegra_adam_init,
 	.reserve		= tegra_adam_reserve,
 	.fixup			= tegra_adam_fixup,

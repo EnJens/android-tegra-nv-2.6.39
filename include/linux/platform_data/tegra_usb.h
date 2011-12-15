@@ -44,4 +44,7 @@ struct tegra_otg_platform_data {
 	void (*host_unregister)(struct platform_device*);
 };
 
+extern void tegra_otg_check_vbus_detection(void);
+extern void tegra_otg_set_host_mode(bool host_mode);
+
 #endif /* _TEGRA_USB_H_ */

@@ -50,82 +50,109 @@
 #include <linux/usb/f_accessory.h>
 
 #include "board.h"
-#include "board-adam.h"
 #include "clock.h"
-#include "gpio-names.h"
+#include "board-adam.h"
 #include "devices.h"
+#include "gpio-names.h"
+#include "fuse.h"
 
-static char *usb_functions_acm_mtp_ums[] = { "acm", "mtp", "usb_mass_storage" };
-static char *usb_functions_acm_mtp_adb_ums[] = { "acm", "mtp", "adb", "usb_mass_storage" };
+static struct usb_mass_storage_platform_data tegra_usb_fsg_platform = {
+        .vendor = "NVIDIA",
+        .product = "Tegra 2",
+        .nluns = 1,
+};
 
-static char *tegra_android_functions_all[] = {
-#ifdef CONFIG_USB_ANDROID_MTP
-	"mtp",
+static struct platform_device tegra_usb_fsg_device = {
+        .name = "usb_mass_storage",
+        .id = -1,
+        .dev = {
+                .platform_data = &tegra_usb_fsg_platform,
+        },
+};
+
+
+
+#define USB_MANUFACTURER_NAME           "NVIDIA"
+#define USB_PRODUCT_NAME                "Harmony"
+#define USB_PRODUCT_ID_MTP_ADB          0x7100
+#define USB_PRODUCT_ID_MTP              0x7102
+#define USB_PRODUCT_ID_RNDIS            0x7103
+#define USB_VENDOR_ID                   0x0955
+
+
+static char *usb_functions_mtp_ums[] = { "mtp", "usb_mass_storage" };
+static char *usb_functions_mtp_adb_ums[] = { "mtp", "adb", "usb_mass_storage" };
+#ifdef CONFIG_USB_ANDROID_ACCESSORY
+static char *usb_functions_accessory[] = { "accessory" };
+static char *usb_functions_accessory_adb[] = { "accessory", "adb" };
 #endif
-#ifdef CONFIG_USB_ANDROID_ACM	
-	"acm",
+#ifdef CONFIG_USB_ANDROID_RNDIS
+static char *usb_functions_rndis[] = { "rndis" };
+static char *usb_functions_rndis_adb[] = { "rndis", "adb" };
 #endif
-#ifdef CONFIG_USB_ANDROID_ADB
-	"adb",
+static char *usb_functions_all[] = {
+#ifdef CONFIG_USB_ANDROID_RNDIS
+        "rndis",
 #endif
-#ifdef CONFIG_USB_ANDROID_MASS_STORAGE
-	"usb_mass_storage",
+#ifdef CONFIG_USB_ANDROID_ACCESSORY
+        "accessory",
 #endif
+        "mtp",
+        "adb",
+        "usb_mass_storage"
 };
 
 static struct android_usb_product usb_products[] = {
-	{
-		.product_id     = 0x7102,
-		.num_functions  = ARRAY_SIZE(usb_functions_acm_mtp_ums),
-		.functions      = usb_functions_acm_mtp_ums,
-	},
-	{
-		.product_id     = 0x7100,
-		.num_functions  = ARRAY_SIZE(usb_functions_acm_mtp_adb_ums),
-		.functions      = usb_functions_acm_mtp_adb_ums,
-	},
+        {
+                .product_id     = USB_PRODUCT_ID_MTP,
+                .num_functions  = ARRAY_SIZE(usb_functions_mtp_ums),
+                .functions      = usb_functions_mtp_ums,
+        },
+        {
+                .product_id     = USB_PRODUCT_ID_MTP_ADB,
+                .num_functions  = ARRAY_SIZE(usb_functions_mtp_adb_ums),
+                .functions      = usb_functions_mtp_adb_ums,
+        },
+#ifdef CONFIG_USB_ANDROID_ACCESSORY
+        {
+                .vendor_id      = USB_ACCESSORY_VENDOR_ID,
+                .product_id     = USB_ACCESSORY_PRODUCT_ID,
+                .num_functions  = ARRAY_SIZE(usb_functions_accessory),
+                .functions      = usb_functions_accessory,
+        },
+        {
+                .vendor_id      = USB_ACCESSORY_VENDOR_ID,
+                .product_id     = USB_ACCESSORY_ADB_PRODUCT_ID,
+                .num_functions  = ARRAY_SIZE(usb_functions_accessory_adb),
+                .functions      = usb_functions_accessory_adb,
+        },
+#endif
+#ifdef CONFIG_USB_ANDROID_RNDIS
+        {
+                .product_id     = USB_PRODUCT_ID_RNDIS,
+                .num_functions  = ARRAY_SIZE(usb_functions_rndis),
+                .functions      = usb_functions_rndis,
+        },
+        {
+                .product_id     = USB_PRODUCT_ID_RNDIS,
+                .num_functions  = ARRAY_SIZE(usb_functions_rndis_adb),
+                .functions      = usb_functions_rndis_adb,
+        },
+#endif
 };
 
 /* standard android USB platform data */
 static struct android_usb_platform_data andusb_plat = {
-	.vendor_id 			= 0x0955,
-	.product_id 		= 0x7100,
-	.manufacturer_name 	= "NVIDIA",
-	.product_name      	= "Adam",
-	.serial_number     	= "0000",
-	.num_products 		= ARRAY_SIZE(usb_products),
-	.products 			= usb_products,
-	.num_functions 		= ARRAY_SIZE(tegra_android_functions_all),
-	.functions 			= tegra_android_functions_all,
+        .vendor_id              = USB_VENDOR_ID,
+        .product_id             = USB_PRODUCT_ID_MTP_ADB,
+        .manufacturer_name      = USB_MANUFACTURER_NAME,
+        .product_name           = USB_PRODUCT_NAME,
+        .serial_number          = NULL,
+        .num_products = ARRAY_SIZE(usb_products),
+        .products = usb_products,
+        .num_functions = ARRAY_SIZE(usb_functions_all),
+        .functions = usb_functions_all,
 };
-
-#ifdef CONFIG_USB_ANDROID_ACM	
-static struct acm_platform_data tegra_acm_platform_data = {
-	.num_inst = 1,
-};
-static struct platform_device tegra_usb_acm_device = {
-	.name 	 = "acm",
-	.id 	 = -1,
-	.dev = {
-		.platform_data = &tegra_acm_platform_data,
-	},
-};
-#endif
-
-#ifdef CONFIG_USB_ANDROID_MASS_STORAGE
-static struct usb_mass_storage_platform_data tegra_usb_ums_platform = {
-	.vendor  = "NVIDIA",
-	.product = "Tegra 2",
-	.nluns 	 = 1,
-};
-static struct platform_device tegra_usb_ums_device = {
-	.name 	 = "usb_mass_storage",
-	.id 	 = -1,
-	.dev = {
-		.platform_data = &tegra_usb_ums_platform,
-	},
-};
-#endif
 
 static struct platform_device androidusb_device = {
 	.name   = "android_usb",
@@ -135,54 +162,87 @@ static struct platform_device androidusb_device = {
 	},
 };
 
+#ifdef CONFIG_USB_ANDROID_RNDIS
+static struct usb_ether_platform_data rndis_pdata = {
+        .ethaddr = {0, 0, 0, 0, 0, 0},
+        .vendorID = USB_VENDOR_ID,
+        .vendorDescr = USB_MANUFACTURER_NAME,
+};
+
+static struct platform_device rndis_device = {
+        .name   = "rndis",
+        .id     = -1,
+        .dev    = {
+                .platform_data  = &rndis_pdata,
+        },
+};
+#endif
+
+
 static struct tegra_utmip_config utmi_phy_config[] = {
 	[0] = {
-		.hssync_start_delay = 9,
+		.hssync_start_delay = 0,
 		.idle_wait_delay 	= 17,
 		.elastic_limit 		= 16,
 		.term_range_adj 	= 6, 	/*  xcvr_setup = 9 with term_range_adj = 6 gives the maximum guard around */
-		.xcvr_setup 		= 15, 	/*  the USB electrical spec. This is true across fast and slow chips, high */
+		.xcvr_setup 		= 9, 	/*  the USB electrical spec. This is true across fast and slow chips, high */
 									/*  and low voltage and hot and cold temperatures */
 		.xcvr_lsfslew 		= 2,	/*  -> To slow rise and fall times in low speed eye diagrams in host mode */
 		.xcvr_lsrslew 		= 2,	/*                                                                        */
 	},
 	[1] = {
-		.hssync_start_delay = 9,
+		.hssync_start_delay = 0,
 		.idle_wait_delay 	= 17,
 		.elastic_limit 		= 16,
 		.term_range_adj 	= 6,	/*  -> xcvr_setup = 9 with term_range_adj = 6 gives the maximum guard around */
-		.xcvr_setup 		= 8,	/*     the USB electrical spec. This is true across fast and slow chips, high */
+		.xcvr_setup 		= 9,	/*     the USB electrical spec. This is true across fast and slow chips, high */
 									/*     and low voltage and hot and cold temperatures */
 		.xcvr_lsfslew 		= 2,	/*  -> To slow rise and fall times in low speed eye diagrams in host mode */
 		.xcvr_lsrslew 		= 2,	/*                                                                        */
 	},
 };
 
+static struct usb_phy_plat_data tegra_usb_phy_pdata[] = {
+        [0] = {
+                        .instance = 0,
+                        .vbus_irq = TPS6586X_INT_BASE + TPS6586X_INT_USB_DET,
+                        .vbus_gpio = TEGRA_GPIO_PB0,
+        },
+        [1] = {
+                        .instance = 1,
+                        .vbus_gpio = -1,
+        },
+        [2] = {
+                        .instance = 2,
+                        .vbus_gpio = -1,
+        },
+};
+
+
 /* ULPI is managed by an SMSC3317 on the Harmony board */
 static struct tegra_ulpi_config ulpi_phy_config = {
-	.reset_gpio = TEGRA_GPIO_PG2, //ADAM_USB1_RESET,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38)
+	// Is this even right?
+	.reset_gpio = -1, //ADAM_USB1_RESET,
 	.clk = "cdev2",
-#else
-	.clk = "clk_dev2",
-#endif
 };
 
 static struct tegra_ehci_platform_data tegra_ehci_pdata[] = {
 	[0] = {
 		.phy_config = &utmi_phy_config[0],
-		.operating_mode = TEGRA_USB_DEVICE, /* DEVICE is slave here */
-		.power_down_on_bus_suspend = 1,
+		.operating_mode = TEGRA_USB_OTG,
+		.power_down_on_bus_suspend = 0,
 	},
 	[1] = {
 		.phy_config = &ulpi_phy_config,
 		.operating_mode = TEGRA_USB_HOST,
 		.power_down_on_bus_suspend = 1,
+		.phy_type = TEGRA_USB_PHY_TYPE_LINK_ULPI,
 	},
 	[2] = {
 		.phy_config = &utmi_phy_config[1],
 		.operating_mode = TEGRA_USB_HOST,
 		.power_down_on_bus_suspend = 1,
+		.hotplug = 1,
 	},
 };
 
@@ -244,107 +304,41 @@ static struct tegra_otg_platform_data tegra_otg_pdata = {
         .host_unregister = &tegra_usb_otg_host_unregister,
 };
 
-
-static struct platform_device *adam_usb_devices[] __initdata = {
-       /* OTG should be the first to be registered */
-       &tegra_otg_device,
-#ifdef CONFIG_USB_ANDROID_ACM	
-	&tegra_usb_acm_device,
-#endif
-#ifdef CONFIG_USB_ANDROID_MASS_STORAGE
-	&tegra_usb_ums_device,
-#endif
-	&androidusb_device,		/* should come AFTER ums and acm */
-	&tegra_udc_device, 		/* USB gadget */
-	//&tegra_ehci2_device,
-	&tegra_ehci3_device,
-};
-
-static void tegra_set_host_mode(void)
-{
-        /* Place interface in host mode */
-        gpio_direction_input(ADAM_USB0_VBUS );
-}
-
-static void tegra_set_gadget_mode(void)
-{
-        /* Place interfase in gadget mode */
-        gpio_direction_output(ADAM_USB0_VBUS, 0 ); /* Gadget */
-}
-
-
-struct kobject *usb_kobj = NULL;
-
-static ssize_t usb_read(struct device *dev, struct device_attribute *attr,
-                       char *buf)
-{
-        int ret = 0;
-
-        if (!strcmp(attr->attr.name, "host_mode")) {
-                if (usb_host_pdev != NULL)
-                        ret = 1;
-        }
-
-        if (!ret) {
-                return strlcpy(buf, "0\n", 3);
-        } else {
-                return strlcpy(buf, "1\n", 3);
-        }
-}
-
-static ssize_t usb_write(struct device *dev, struct device_attribute *attr,
-                        const char *buf, size_t count)
-{
-        unsigned long on = simple_strtoul(buf, NULL, 10);
-
-        if (!strcmp(attr->attr.name, "host_mode")) {
-                if (on)
-                        tegra_set_host_mode();
-                else
-                        tegra_set_gadget_mode();
-        }
-
-        return count;
-}
-
-static DEVICE_ATTR(host_mode, 0644, usb_read, usb_write);
-
-static struct attribute *usb_sysfs_entries[] = {
-        &dev_attr_host_mode.attr,
-        NULL
-};
-
-static struct attribute_group usb_attr_group = {
-        .name   = NULL,
-        .attrs  = usb_sysfs_entries,
-};
+#define SERIAL_NUMBER_LENGTH 20
+static char usb_serial_num[SERIAL_NUMBER_LENGTH];
 
 int __init adam_usb_register_devices(void)
 {
-	int ret;
-	
-        tegra_ehci1_device.dev.platform_data = &tegra_ehci_pdata[0];
-        tegra_ehci2_device.dev.platform_data = &tegra_ehci_pdata[1];
-        tegra_ehci3_device.dev.platform_data = &tegra_ehci_pdata[2];
+	int ret,i;
+	char *src;
+
+        snprintf(usb_serial_num, sizeof(usb_serial_num), "%016llx", tegra_chip_uid());
+        andusb_plat.serial_number = kstrdup(usb_serial_num, GFP_KERNEL);
+
+//	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
+        /* OTG should be the first to be registered */
         tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
+        platform_device_register(&tegra_otg_device);
 
-        /* If in host mode, set VBUS to 1 */
-        gpio_request(ADAM_USB0_VBUS, "USB0 VBUS"); /* VBUS switch, perhaps ? -- Tied to what? -- should require +5v ... */
+        platform_device_register(&tegra_usb_fsg_device);
+        platform_device_register(&androidusb_device);
+        platform_device_register(&tegra_udc_device);
+//        platform_device_register(&tegra_ehci2_device);
 
-        /* 0 = Gadget */
-        gpio_direction_output(ADAM_USB0_VBUS, 0 ); /* Gadget */
+        tegra_ehci3_device.dev.platform_data=&tegra_ehci_pdata[2];
+        platform_device_register(&tegra_ehci3_device);
+#ifdef CONFIG_USB_ANDROID_RNDIS
+        src = usb_serial_num;
 
-	ret = platform_add_devices(adam_usb_devices, ARRAY_SIZE(adam_usb_devices));
-        if (ret)
-                return ret;
-
-        /* Register a sysfs interface to let user switch modes */
-        usb_kobj = kobject_create_and_add("usbbus", NULL);
-        if (!usb_kobj) {
-                pr_err("Unable to register USB mode switch");
-                return 0;
+        /* create a fake MAC address from our serial number.
+         * first byte is 0x02 to signify locally administered.
+         */
+        rndis_pdata.ethaddr[0] = 0x02;
+        for (i = 0; *src; i++) {
+                /* XOR the USB serial across the remaining bytes */
+                rndis_pdata.ethaddr[i % (ETH_ALEN - 1) + 1] ^= *src++;
         }
-
-        /* Attach an attribute to the already registered usbbus to let the user switch usb modes */
-        return sysfs_create_group(usb_kobj, &usb_attr_group);
+        platform_device_register(&rndis_device);
+#endif
+	tegra_otg_set_host_mode(false);
 }
