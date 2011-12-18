@@ -510,7 +510,10 @@ static void adam_power_off(void)
 {
 	/* Power down through NvEC */
 	//nvec_poweroff();
-	
+
+	/* Turn off main supply */
+	tps6586x_power_off();
+
 	/* Then try by powering off supplies */
 	reg_off("vdd_sm2");
 	reg_off("vdd_core");
