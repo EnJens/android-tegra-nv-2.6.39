@@ -426,6 +426,7 @@ static struct i2c_board_info __initdata adam_regulators[] = {
 	{
 		I2C_BOARD_INFO("tps6586x", 0x34),
 		.platform_data = &tps_platform,
+		.irq = INT_EXTERNAL_PMU,
 	},
 };
 
