@@ -115,8 +115,6 @@
 #define ADAM_WAKE_KEY_POWER  TEGRA_WAKE_GPIO_PV2
 #define ADAM_WAKE_KEY_RESUME TEGRA_WAKE_GPIO_PV2
 
-#define ADAM_TEMP_ALERT	TEGRA_GPIO_PN6
-
 /* The switch used to indicate rotation lock */
 //#define SW_ROTATION_LOCK 	(SW_MAX-1)
 
