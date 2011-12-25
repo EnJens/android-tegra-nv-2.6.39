@@ -68,6 +68,7 @@ comment "Tegra board type"
 config MACH_ADAM
        bool "Notion Ink Adam TabletPC"
        depends on ARCH_TEGRA_2x_SOC
+       select MACH_HAS_SND_SOC_TEGRA_ALC5623 if SND_SOC
        help
          Support for all TabletPCs based on the ADAM design.
 
