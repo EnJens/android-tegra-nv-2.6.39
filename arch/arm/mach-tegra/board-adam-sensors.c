@@ -23,11 +23,9 @@
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
-#include <linux/adt7461.h>
 
 #include "board-adam.h"
 #include "gpio-names.h"
-#include "cpu-tegra.h"
 
 static struct i2c_board_info __initdata adam_i2c_bus0_sensor_info[] = {
 	{
@@ -54,28 +52,6 @@ static struct i2c_board_info __initdata adam_i2c_bus2_sensor_info[] = {
 	},
 };
 
-static struct adt7461_platform_data adam_adt7461_pdata = {
-	.supported_hwrev = true,
-	.ext_range = false,
-	.therm2 = true,
-	.conv_rate = 0x05,
-	.offset = 0,
-	.hysteresis = 0,
-	.shutdown_ext_limit = 115,
-	.shutdown_local_limit = 120,
-	.throttling_ext_limit = 90,
-	.alarm_fn = tegra_throttling_enable,
-};
-
-
-static struct i2c_board_info __initdata adam_i2c_bus4_sensor_info[] = {
-	{
-		I2C_BOARD_INFO("adt7461", 0x4C),
-		.irq = TEGRA_GPIO_TO_IRQ(ADAM_TEMP_ALERT),
-		.platform_data = &adam_adt7461_pdata,
-	},
-};
-
 int __init adam_sensors_register_devices(void)
 {
 	tegra_gpio_enable(TEGRA_GPIO_PV5);
@@ -93,15 +69,9 @@ int __init adam_sensors_register_devices(void)
 	tegra_gpio_enable(TEGRA_GPIO_PV6);
 	gpio_request(TEGRA_GPIO_PV6, "so340010_kbd_irq");
 	gpio_direction_input(TEGRA_GPIO_PV6);
-	
-		tegra_gpio_enable(ADAM_TEMP_ALERT);
-	gpio_request(ADAM_TEMP_ALERT, "adt7461_temp_alert_irq");
-	gpio_direction_input(ADAM_TEMP_ALERT);
 
 	i2c_register_board_info(0, adam_i2c_bus0_sensor_info,
 	                        ARRAY_SIZE(adam_i2c_bus0_sensor_info));
-	i2c_register_board_info(4, adam_i2c_bus4_sensor_info,
-	                        ARRAY_SIZE(adam_i2c_bus4_sensor_info));
 	return i2c_register_board_info(2, adam_i2c_bus2_sensor_info,
 	                               ARRAY_SIZE(adam_i2c_bus2_sensor_info));
 }

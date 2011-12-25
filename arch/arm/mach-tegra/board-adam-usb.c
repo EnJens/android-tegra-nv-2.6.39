@@ -315,7 +315,7 @@ int __init adam_usb_register_devices(void)
         snprintf(usb_serial_num, sizeof(usb_serial_num), "%016llx", tegra_chip_uid());
         andusb_plat.serial_number = kstrdup(usb_serial_num, GFP_KERNEL);
 
-	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
+//	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
         /* OTG should be the first to be registered */
         tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
         platform_device_register(&tegra_otg_device);
