@@ -549,7 +549,7 @@ config KEYBOARD_W90P910
 
 config KEYBOARD_SO340010
         boolean "SO340010 I2C Keyboard controller"
-        depends on ARCH_I2C
+        depends on I2C
         help
                 Say Y here if you want to enable SEARCH/HOME/MENU/BACK keys.
 
