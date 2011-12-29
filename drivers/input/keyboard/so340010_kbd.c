@@ -471,7 +471,7 @@ static void so340010_kbd_early_suspend(struct early_suspend *es)
 	logd(TAG "so340010_kbd_early_suspend() IN\r\n");
 	
 	dev = (struct so340010_kbd_dev *)container_of(es, struct so340010_kbd_dev, early_suspend);
-	enable_irq(dev->client->irq);
+	disable_irq(dev->client->irq);
 	//NvOdmGpioInterruptMask(dev->irq_handle, NV_TRUE);
 	cancel_work_sync(&dev->work);
 	so340010_sleep(dev, true);
@@ -489,7 +489,7 @@ static void so340010_kbd_late_resume(struct early_suspend *es)
 	if (so340010_reset(dev)) {
 		logd(TAG "so340010_reset_failed\r\n");
 	}
-	disable_irq(dev->client->irq);
+	enable_irq(dev->client->irq);
 	//NvOdmGpioInterruptMask(dev->irq_handle, NV_FALSE);
 }
 #endif
