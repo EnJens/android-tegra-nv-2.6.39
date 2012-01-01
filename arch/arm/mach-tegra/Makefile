@@ -162,8 +162,7 @@ obj-${CONFIG_MACH_TEGRA_ENTERPRISE}     += board-enterprise-sensors.o
 
 # Adam arch drivers
 obj-${CONFIG_MACH_ADAM}              += board-adam-aes.o
-#obj-${CONFIG_MACH_ADAM}              += board-adam-audio.o
-#obj-${CONFIG_MACH_ADAM}              += board-adam-jack.o
+obj-${CONFIG_MACH_ADAM}              += board-adam-audio.o
 obj-${CONFIG_MACH_ADAM}              += board-adam-bootinfo.o
 obj-${CONFIG_MACH_ADAM}              += board-adam-bt.o
 obj-${CONFIG_MACH_ADAM}              += board-adam-camera.o
