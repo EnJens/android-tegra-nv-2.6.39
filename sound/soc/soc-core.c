@@ -1294,7 +1294,6 @@ static struct snd_soc_dai_ops null_dai_ops = {
 
 static int soc_bind_dai_link(struct snd_soc_card *card, int num)
 {
-        pr_info("%s++", __func__);
 	struct snd_soc_dai_link *dai_link = &card->dai_link[num];
 	struct snd_soc_pcm_runtime *rtd = &card->rtd[num];
 	struct snd_soc_codec *codec;
@@ -1800,7 +1799,6 @@ static int snd_soc_init_codec_cache(struct snd_soc_codec *codec,
 
 static void snd_soc_instantiate_card(struct snd_soc_card *card)
 {
-        pr_info("%s++", __func__);
 	struct snd_soc_codec *codec;
 	struct snd_soc_codec_conf *codec_conf;
 	enum snd_soc_compress_type compress_type;
@@ -1813,7 +1811,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 		return;
 	}
 
-        pr_info("%s-1", __func__);
 	/* bind DAIs */
 	for (i = 0; i < card->num_links; i++)
 		soc_bind_dai_link(card, i);
@@ -1823,7 +1820,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 		mutex_unlock(&card->mutex);
 		return;
 	}
-        pr_info("%s-2", __func__);
 
 	/* initialize the register cache for each available codec */
 	list_for_each_entry(codec, &codec_list, list) {
@@ -1847,7 +1843,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 			return;
 		}
 	}
-        pr_info("%s-3", __func__);
 
 	/* card bind complete so register a sound card */
 	ret = snd_card_create(SNDRV_DEFAULT_IDX1, SNDRV_DEFAULT_STR1,
@@ -1858,7 +1853,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 		mutex_unlock(&card->mutex);
 		return;
 	}
-        pr_info("%s-4", __func__);
 	card->snd_card->dev = card->dev;
 
 	card->dapm.bias_level = SND_SOC_BIAS_OFF;
@@ -1878,7 +1872,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 			goto card_probe_error;
 	}
 
-        pr_info("%s-5", __func__);
 	for (i = 0; i < card->num_links; i++) {
 		ret = soc_probe_dai_link(card, i);
 		if (ret < 0) {
@@ -1887,7 +1880,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 			goto probe_dai_err;
 		}
 	}
-        pr_info("%s-6", __func__);
 
 	for (i = 0; i < card->num_aux_devs; i++) {
 		ret = soc_probe_aux_dev(card, i);
@@ -1897,7 +1889,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 			goto probe_aux_dev_err;
 		}
 	}
-        pr_info("%s-7", __func__);
 
 	if (card->dapm_widgets)
 		snd_soc_dapm_new_controls(&card->dapm, card->dapm_widgets,
@@ -1916,7 +1907,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 	snd_soc_dapm_debugfs_init(&card->dapm);
 #endif
 
-        pr_info("%s-8", __func__);
 	snprintf(card->snd_card->shortname, sizeof(card->snd_card->shortname),
 		 "%s",  card->name);
 	snprintf(card->snd_card->longname, sizeof(card->snd_card->longname),
@@ -1930,7 +1920,6 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
 			goto probe_aux_dev_err;
 		}
 	}
-        pr_info("%s-9", __func__);
 
 	ret = snd_card_register(card->snd_card);
 	if (ret < 0) {
@@ -2412,7 +2401,6 @@ EXPORT_SYMBOL_GPL(snd_soc_cnew);
 int snd_soc_add_controls(struct snd_soc_codec *codec,
 	const struct snd_kcontrol_new *controls, int num_controls)
 {
-        pr_info("%s++", __func__);
 	struct snd_card *card = codec->card->snd_card;
 	int err, i;
 
@@ -3102,7 +3090,6 @@ EXPORT_SYMBOL_GPL(snd_soc_put_volsw_2r_sx);
 int snd_soc_dai_set_sysclk(struct snd_soc_dai *dai, int clk_id,
 	unsigned int freq, int dir)
 {
-        pr_info("%s++", __func__);
 	if (dai->driver && dai->driver->ops->set_sysclk)
 		return dai->driver->ops->set_sysclk(dai, clk_id, freq, dir);
 	else if (dai->codec && dai->codec->driver->set_sysclk)
@@ -3125,7 +3112,6 @@ EXPORT_SYMBOL_GPL(snd_soc_dai_set_sysclk);
 int snd_soc_codec_set_sysclk(struct snd_soc_codec *codec, int clk_id,
 	unsigned int freq, int dir)
 {
-        pr_info("%s++", __func__);
 	if (codec->driver->set_sysclk)
 		return codec->driver->set_sysclk(codec, clk_id, freq, dir);
 	else
@@ -3300,7 +3286,6 @@ EXPORT_SYMBOL_GPL(snd_soc_dai_digital_mute);
  */
 int snd_soc_register_card(struct snd_soc_card *card)
 {
-        pr_info("%s++", __func__);
 	int i;
 
 	if (!card->name || !card->dev)
@@ -3423,7 +3408,6 @@ static inline char *fmt_multiple_name(struct device *dev,
 int snd_soc_register_dai(struct device *dev,
 		struct snd_soc_dai_driver *dai_drv)
 {
-        pr_info("%s++", __func__);
 	struct snd_soc_dai *dai;
 
 	dev_dbg(dev, "dai register %s\n", dev_name(dev));
@@ -3490,7 +3474,6 @@ EXPORT_SYMBOL_GPL(snd_soc_unregister_dai);
 int snd_soc_register_dais(struct device *dev,
 		struct snd_soc_dai_driver *dai_drv, size_t count)
 {
-        pr_info("%s++", __func__);
 	struct snd_soc_dai *dai;
 	int i, ret = 0;
 
@@ -3564,7 +3547,6 @@ EXPORT_SYMBOL_GPL(snd_soc_unregister_dais);
 int snd_soc_register_platform(struct device *dev,
 		struct snd_soc_platform_driver *platform_drv)
 {
-        pr_info("%s++", __func__);
 	struct snd_soc_platform *platform;
 
 	dev_dbg(dev, "platform register %s\n", dev_name(dev));
@@ -3663,7 +3645,6 @@ int snd_soc_register_codec(struct device *dev,
 			   struct snd_soc_dai_driver *dai_drv,
 			   int num_dai)
 {
-        pr_info("%s++", __func__);
 	size_t reg_size;
 	struct snd_soc_codec *codec;
 	int ret, i;

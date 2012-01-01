@@ -17,5 +17,3 @@ ifeq ($(CONFIG_SND),y)
 endif
 
 soundcore-objs  := sound_core.o
-
-EXTRA_CFLAGS += -DDEBUG

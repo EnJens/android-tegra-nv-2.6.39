@@ -192,13 +192,18 @@ static __initdata struct tegra_clk_init_table adam_clk_init_table[] = {
 #define CDEV1 "clk_dev1"
 #define CDEV2 "clk_dev2"
 #endif
+#ifdef ALC5623_IS_MASTER		
+//	{ CDEV1,   NULL,	18432000,  false},		/* used as audio CODEC MCLK */	
+	{ CDEV1,   NULL,	0,  false},		/* used as audio CODEC MCLK */	
+#else
 #       ifdef ADAM_48KHZ_AUDIO
 //        { CDEV1,   NULL /*"pll_a_out0"*/,12288000,  false},             /* used as audio CODEC MCLK */
-        { CDEV1,   NULL /*"pll_a_out0"*/,0,  true},             /* used as audio CODEC MCLK */
+        { CDEV1,   NULL /*"pll_a_out0"*/,0,  false},             /* used as audio CODEC MCLK */
 #       else
 //        { CDEV1,   NULL /*"pll_a_out0"*/,11289600,  false},             /* used as audio CODEC MCLK */
-        { CDEV1,   NULL /*"pll_a_out0"*/,0,  true},             /* used as audio CODEC MCLK */
+        { CDEV1,   NULL /*"pll_a_out0"*/,0,  false},             /* used as audio CODEC MCLK */
 #       endif
+#endif
 //	{ CDEV2,   NULL,	26000000,  false}, 	/* probably used as USB clock - perhaps 24mhz ?*/	
 	{ CDEV2,   NULL,	0,  false}, 	/* probably used as USB clock - perhaps 24mhz ?*/	
 
