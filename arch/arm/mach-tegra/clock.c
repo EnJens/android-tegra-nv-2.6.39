@@ -722,7 +722,7 @@ void tegra_sdmmc_tap_delay(struct clk *c, int delay) {
 }
 #endif
 
-static bool tegra_keep_boot_clocks = true;
+static bool tegra_keep_boot_clocks = false;
 static int __init tegra_keep_boot_clocks_setup(char *__unused)
 {
 	tegra_keep_boot_clocks = true;
