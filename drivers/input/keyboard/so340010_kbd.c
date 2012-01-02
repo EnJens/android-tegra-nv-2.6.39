@@ -108,7 +108,7 @@ struct so340010_kbd_info {
 static struct so340010_kbd_info key_table[] = {
 	{ 0x0008, KEY_BACK },
 	{ 0x0004, KEY_MENU },
-	{ 0x0002, KEY_HOME },
+	{ 0x0002, KEY_HOMEPAGE },
 	{ 0x0001, KEY_SEARCH },
 };
 
