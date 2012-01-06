@@ -236,7 +236,9 @@ static void __init tegra_adam_init(void)
 	adam_gsm_pm_register_devices();
 	
 	/* Register Bluetooth powermanagement devices */
-	adam_bt_pm_register_devices();
+	//adam_bt_pm_register_devices();
+	adam_bt_rfkill();
+	adam_setup_bluesleep();
 
 	/* Register Camera powermanagement devices */
 //	adam_camera_register_devices();
