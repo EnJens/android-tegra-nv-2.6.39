@@ -76,13 +76,14 @@ struct tegra_alc5623 {
 static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 					struct snd_pcm_hw_params *params)
 {
+        pr_info("%s++", __func__);
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_card *card = codec->card;
 	struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
-	int srate, mclk, mclk_change;
+	int srate, mclk;
 	int err;
 
 	srate = params_rate(params);
@@ -93,20 +94,21 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 		mclk = 128 * srate;
 		break;
 	default:
-		mclk = 512 * srate;
+		mclk = 256 * srate;
 		break;
 	}
 	/* FIXME: Codec only requires >= 3MHz if OSR==0 */
 	while (mclk < 6000000)
 		mclk *= 2;
 
-	err = tegra_asoc_utils_set_rate(&machine->util_data, srate, mclk
-					&mclk_change);
+        pr_info("%s-1", __func__);
+	err = tegra_asoc_utils_set_rate(&machine->util_data, srate, mclk);
 	if (err < 0) {
 		dev_err(card->dev, "Can't configure clocks\n");
 		return err;
 	}
 
+        pr_info("%s-2", __func__);
 	err = snd_soc_dai_set_fmt(codec_dai,
 					SND_SOC_DAIFMT_I2S |
 					SND_SOC_DAIFMT_NB_NF |
@@ -116,6 +118,7 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 		return err;
 	}
 
+        pr_info("%s-3", __func__);
 	err = snd_soc_dai_set_fmt(cpu_dai,
 					SND_SOC_DAIFMT_I2S |
 					SND_SOC_DAIFMT_NB_NF |
@@ -125,13 +128,12 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 		return err;
 	}
 
-        if (mclk_change) {
-		err = snd_soc_dai_set_sysclk(codec_dai, 0, mclk,
-						SND_SOC_CLOCK_IN);
-		if (err < 0) {
-			dev_err(card->dev, "codec_dai clock not set\n");
-			return err;
-		}
+        pr_info("%s-4", __func__);
+	err = snd_soc_dai_set_sysclk(codec_dai, 0, mclk,
+					SND_SOC_CLOCK_IN);
+	if (err < 0) {
+		dev_err(card->dev, "codec_dai clock not set\n");
+		return err;
 	}
 
 	return 0;
@@ -292,8 +294,8 @@ static const struct snd_soc_dapm_route adam_audio_map[] = {
 	{"Int Spk", NULL, "AUXOUTL"},
 	{"Mic Bias1", NULL, "Int Mic"},
 	{"MIC1", NULL, "Mic Bias1"},
-	{"FM Radio", NULL, "AUXINR"},
-	{"FM Radio", NULL, "AUXINL"},
+	{"AUXINR", NULL, "FM Radio"},
+	{"AUXINL", NULL, "FM Radio"},
 };
 
 static const struct snd_kcontrol_new adam_controls[] = {

@@ -143,6 +143,7 @@ static struct snd_minor *autoload_device(unsigned int minor)
 
 static int snd_open(struct inode *inode, struct file *file)
 {
+	pr_info("%s++", __func__);
 	unsigned int minor = iminor(inode);
 	struct snd_minor *mptr = NULL;
 	const struct file_operations *old_fops;
@@ -169,14 +170,17 @@ static int snd_open(struct inode *inode, struct file *file)
 	if (err < 0)
 		return err;
 
+	pr_info("%s-1", __func__);
 	if (file->f_op->open) {
 		err = file->f_op->open(inode, file);
 		if (err) {
+			pr_info("%s-2", __func__);
 			fops_put(file->f_op);
 			file->f_op = fops_get(old_fops);
 		}
 	}
 	fops_put(old_fops);
+	pr_info("%s-3", __func__);
 	return err;
 }
 
