@@ -530,6 +530,7 @@ static const struct _pll_div codec_slave_pll_div[] = {
 static int alc5623_set_dai_pll(struct snd_soc_dai *codec_dai, int pll_id,
 		int source, unsigned int freq_in, unsigned int freq_out)
 {
+        pr_info("%s++", __func__);
 	int i;
 	struct snd_soc_codec *codec = codec_dai->codec;
 	int gbl_clk = 0, pll_div = 0;
@@ -611,6 +612,7 @@ static const struct _coeff_div coeff_div[] = {
 
 static int get_coeff(struct snd_soc_codec *codec, int rate)
 {
+        pr_info("%s++ rate=%d", __func__, rate);
 	struct alc5623_priv *alc5623 = snd_soc_codec_get_drvdata(codec);
 	int i;
 
@@ -618,6 +620,7 @@ static int get_coeff(struct snd_soc_codec *codec, int rate)
 		if (coeff_div[i].fs * rate == alc5623->sysclk)
 			return i;
 	}
+        pr_info("%s sysclk=%d", __func__, alc5623->sysclk);
 	return -EINVAL;
 }
 
@@ -627,6 +630,7 @@ static int get_coeff(struct snd_soc_codec *codec, int rate)
 static int alc5623_set_dai_sysclk(struct snd_soc_dai *codec_dai,
 		int clk_id, unsigned int freq, int dir)
 {
+        pr_info("%s++", __func__);
 	struct snd_soc_codec *codec = codec_dai->codec;
 	struct alc5623_priv *alc5623 = snd_soc_codec_get_drvdata(codec);
 
@@ -648,6 +652,7 @@ static int alc5623_set_dai_sysclk(struct snd_soc_dai *codec_dai,
 static int alc5623_set_dai_fmt(struct snd_soc_dai *codec_dai,
 		unsigned int fmt)
 {
+        pr_info("%s++", __func__);
 	struct snd_soc_codec *codec = codec_dai->codec;
 	u16 iface = 0;
 
@@ -706,6 +711,7 @@ static int alc5623_set_dai_fmt(struct snd_soc_dai *codec_dai,
 static int alc5623_pcm_hw_params(struct snd_pcm_substream *substream,
 		struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
 {
+        pr_info("%s++", __func__);
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_codec *codec = rtd->codec;
 	struct alc5623_priv *alc5623 = snd_soc_codec_get_drvdata(codec);
@@ -750,6 +756,7 @@ static int alc5623_pcm_hw_params(struct snd_pcm_substream *substream,
 
 static int alc5623_mute(struct snd_soc_dai *dai, int mute)
 {
+        pr_info("%s++", __func__);
 	struct snd_soc_codec *codec = dai->codec;
 	u16 hp_mute = ALC5623_MISC_M_DAC_L_INPUT | ALC5623_MISC_M_DAC_R_INPUT;
 	u16 mute_reg = snd_soc_read(codec, ALC5623_MISC_CTRL) & ~hp_mute;
@@ -777,6 +784,7 @@ static int alc5623_mute(struct snd_soc_dai *dai, int mute)
 
 static void enable_power_depop(struct snd_soc_codec *codec)
 {
+        pr_info("%s++", __func__);
 	struct alc5623_priv *alc5623 = snd_soc_codec_get_drvdata(codec);
 
 	snd_soc_update_bits(codec, ALC5623_PWR_MANAG_ADD1,
@@ -811,6 +819,7 @@ static void enable_power_depop(struct snd_soc_codec *codec)
 static int alc5623_set_bias_level(struct snd_soc_codec *codec,
 				      enum snd_soc_bias_level level)
 {
+        pr_info("%s++", __func__);
 	switch (level) {
 	case SND_SOC_BIAS_ON:
 		enable_power_depop(codec);
@@ -871,12 +880,14 @@ static struct snd_soc_dai_driver alc5623_dai = {
 
 static int alc5623_suspend(struct snd_soc_codec *codec, pm_message_t mesg)
 {
+        pr_info("%s++", __func__);
 	alc5623_set_bias_level(codec, SND_SOC_BIAS_OFF);
 	return 0;
 }
 
 static int alc5623_resume(struct snd_soc_codec *codec)
 {
+        pr_info("%s++", __func__);
 	int i, step = codec->driver->reg_cache_step;
 	u16 *cache = codec->reg_cache;
 
@@ -898,6 +909,7 @@ static int alc5623_resume(struct snd_soc_codec *codec)
 
 static int alc5623_probe(struct snd_soc_codec *codec)
 {
+        pr_info("%s++", __func__);
 	struct alc5623_priv *alc5623 = snd_soc_codec_get_drvdata(codec);
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 	int ret;
@@ -972,6 +984,7 @@ static int alc5623_probe(struct snd_soc_codec *codec)
 /* power down chip */
 static int alc5623_remove(struct snd_soc_codec *codec)
 {
+        pr_info("%s++", __func__);
 	alc5623_set_bias_level(codec, SND_SOC_BIAS_OFF);
 	return 0;
 }
@@ -996,6 +1009,7 @@ static struct snd_soc_codec_driver soc_codec_device_alc5623 = {
 static int alc5623_i2c_probe(struct i2c_client *client,
 				const struct i2c_device_id *id)
 {
+        pr_info("%s++", __func__);
 	struct alc5623_platform_data *pdata;
 	struct alc5623_priv *alc5623;
 	int ret, vid1, vid2;
@@ -1066,6 +1080,7 @@ static int alc5623_i2c_probe(struct i2c_client *client,
 
 static int alc5623_i2c_remove(struct i2c_client *client)
 {
+        pr_info("%s++", __func__);
 	struct alc5623_priv *alc5623 = i2c_get_clientdata(client);
 
 	snd_soc_unregister_codec(&client->dev);
@@ -1094,6 +1109,7 @@ static struct i2c_driver alc5623_i2c_driver = {
 
 static int __init alc5623_modinit(void)
 {
+        pr_info("%s++", __func__);
 	int ret;
 
 	ret = i2c_add_driver(&alc5623_i2c_driver);
@@ -1108,6 +1124,7 @@ module_init(alc5623_modinit);
 
 static void __exit alc5623_modexit(void)
 {
+        pr_info("%s++", __func__);
 	i2c_del_driver(&alc5623_i2c_driver);
 }
 module_exit(alc5623_modexit);

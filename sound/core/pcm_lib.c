@@ -607,6 +607,9 @@ static inline unsigned int muldiv32(unsigned int a, unsigned int b,
  */
 int snd_interval_refine(struct snd_interval *i, const struct snd_interval *v)
 {
+//	pr_info("%s++", __func__);
+//	pr_info("%s-i %d %d %d %d", __func__, i->min, i->max, i->openmin, i->openmax);
+//	pr_info("%s-v %d %d %d %d", __func__, v->min, v->max, v->openmin, v->openmax);
 	int changed = 0;
 	if (snd_BUG_ON(snd_interval_empty(i)))
 		return -EINVAL;
@@ -642,6 +645,7 @@ int snd_interval_refine(struct snd_interval *i, const struct snd_interval *v)
 	} else if (!i->openmin && !i->openmax && i->min == i->max)
 		i->integer = 1;
 	if (snd_interval_checkempty(i)) {
+//		pr_info("%s-1 %d %d %d %d", __func__, i->min, i->max, i->openmin, i->openmax);
 		snd_interval_none(i);
 		return -EINVAL;
 	}
