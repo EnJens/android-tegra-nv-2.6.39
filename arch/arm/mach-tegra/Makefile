@@ -188,7 +188,6 @@ obj-${CONFIG_MACH_ADAM}              += board-adam-wdt.o
 #obj-${CONFIG_MACH_ADAM}              += board-adam-wlan.o
 obj-${CONFIG_MACH_ADAM}              += board-adam.o
 # adam power management drivers
-obj-${CONFIG_MACH_ADAM}              += board-adam-pm-bluetooth.o
 obj-${CONFIG_MACH_ADAM}              += board-adam-pm-camera.o
 obj-${CONFIG_MACH_ADAM}              += board-adam-pm-gps.o
 obj-${CONFIG_MACH_ADAM}              += board-adam-pm-gsm.o
