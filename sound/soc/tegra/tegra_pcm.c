@@ -60,7 +60,7 @@ static const struct snd_pcm_hardware tegra_pcm_hardware = {
 
 static void tegra_pcm_queue_dma(struct tegra_runtime_data *prtd)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_substream *substream = prtd->substream;
 	struct snd_dma_buffer *buf = &substream->dma_buffer;
 	struct tegra_dma_req *dma_req;
@@ -84,7 +84,7 @@ static void tegra_pcm_queue_dma(struct tegra_runtime_data *prtd)
 
 static void dma_complete_callback(struct tegra_dma_req *req)
 {
-	pr_info("%s++", __func__);
+	
 	struct tegra_runtime_data *prtd = (struct tegra_runtime_data *)req->dev;
 	struct snd_pcm_substream *substream = prtd->substream;
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -109,7 +109,7 @@ static void dma_complete_callback(struct tegra_dma_req *req)
 static void setup_dma_tx_request(struct tegra_dma_req *req,
 					struct tegra_pcm_dma_params * dmap)
 {
-	pr_info("%s++", __func__);
+	
 	req->complete = dma_complete_callback;
 	req->to_memory = false;
 	req->dest_addr = dmap->addr;
@@ -123,7 +123,7 @@ static void setup_dma_tx_request(struct tegra_dma_req *req,
 static void setup_dma_rx_request(struct tegra_dma_req *req,
 					struct tegra_pcm_dma_params * dmap)
 {
-	pr_info("%s++", __func__);
+	
 	req->complete = dma_complete_callback;
 	req->to_memory = true;
 	req->source_addr = dmap->addr;
@@ -136,7 +136,7 @@ static void setup_dma_rx_request(struct tegra_dma_req *req,
 
 static int tegra_pcm_open(struct snd_pcm_substream *substream)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct tegra_runtime_data *prtd;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
@@ -213,7 +213,7 @@ err:
 
 static int tegra_pcm_close(struct snd_pcm_substream *substream)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct tegra_runtime_data *prtd = runtime->private_data;
 
@@ -232,7 +232,7 @@ static int tegra_pcm_close(struct snd_pcm_substream *substream)
 static int tegra_pcm_hw_params(struct snd_pcm_substream *substream,
 				struct snd_pcm_hw_params *params)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct tegra_runtime_data *prtd = runtime->private_data;
 
@@ -246,7 +246,7 @@ static int tegra_pcm_hw_params(struct snd_pcm_substream *substream,
 
 static int tegra_pcm_hw_free(struct snd_pcm_substream *substream)
 {
-	pr_info("%s++", __func__);
+	
 	snd_pcm_set_runtime_buffer(substream, NULL);
 
 	return 0;
@@ -254,7 +254,7 @@ static int tegra_pcm_hw_free(struct snd_pcm_substream *substream)
 
 static int tegra_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct tegra_runtime_data *prtd = runtime->private_data;
 	unsigned long flags;
@@ -299,7 +299,7 @@ static int tegra_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 
 static snd_pcm_uframes_t tegra_pcm_pointer(struct snd_pcm_substream *substream)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct tegra_runtime_data *prtd = runtime->private_data;
 	int dma_transfer_count;
@@ -315,7 +315,7 @@ static snd_pcm_uframes_t tegra_pcm_pointer(struct snd_pcm_substream *substream)
 static int tegra_pcm_mmap(struct snd_pcm_substream *substream,
 				struct vm_area_struct *vma)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_runtime *runtime = substream->runtime;
 
 	return dma_mmap_writecombine(substream->pcm->card->dev, vma,
@@ -337,7 +337,7 @@ static struct snd_pcm_ops tegra_pcm_ops = {
 
 static int tegra_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_substream *substream = pcm->streams[stream].substream;
 	struct snd_dma_buffer *buf = &substream->dma_buffer;
 	size_t size = tegra_pcm_hardware.buffer_bytes_max;
@@ -357,7 +357,7 @@ static int tegra_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 
 static void tegra_pcm_deallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 {
-	pr_info("%s++", __func__);
+	
 	struct snd_pcm_substream *substream;
 	struct snd_dma_buffer *buf;
 
@@ -379,7 +379,7 @@ static u64 tegra_dma_mask = DMA_BIT_MASK(32);
 static int tegra_pcm_new(struct snd_card *card,
 				struct snd_soc_dai *dai, struct snd_pcm *pcm)
 {
-	pr_info("%s++", __func__);
+	
 	int ret = 0;
 
 	if (!card->dev->dma_mask)
@@ -411,7 +411,7 @@ err:
 
 static void tegra_pcm_free(struct snd_pcm *pcm)
 {
-	pr_info("%s++", __func__);
+	
 	tegra_pcm_deallocate_dma_buffer(pcm, SNDRV_PCM_STREAM_CAPTURE);
 	tegra_pcm_deallocate_dma_buffer(pcm, SNDRV_PCM_STREAM_PLAYBACK);
 }

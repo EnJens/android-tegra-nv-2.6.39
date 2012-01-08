@@ -76,7 +76,7 @@ struct tegra_alc5623 {
 static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 					struct snd_pcm_hw_params *params)
 {
-        pr_info("%s++", __func__);
+          
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -101,14 +101,12 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 	while (mclk < 6000000)
 		mclk *= 2;
 
-        pr_info("%s-1", __func__);
 	err = tegra_asoc_utils_set_rate(&machine->util_data, srate, mclk);
 	if (err < 0) {
 		dev_err(card->dev, "Can't configure clocks\n");
 		return err;
 	}
 
-        pr_info("%s-2", __func__);
 	err = snd_soc_dai_set_fmt(codec_dai,
 					SND_SOC_DAIFMT_I2S |
 					SND_SOC_DAIFMT_NB_NF |
@@ -118,7 +116,6 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 		return err;
 	}
 
-        pr_info("%s-3", __func__);
 	err = snd_soc_dai_set_fmt(cpu_dai,
 					SND_SOC_DAIFMT_I2S |
 					SND_SOC_DAIFMT_NB_NF |
@@ -128,7 +125,6 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 		return err;
 	}
 
-        pr_info("%s-4", __func__);
 	err = snd_soc_dai_set_sysclk(codec_dai, 0, mclk,
 					SND_SOC_CLOCK_IN);
 	if (err < 0) {
@@ -177,7 +173,7 @@ static struct switch_dev tegra_alc5623_headset_switch = {
 static int tegra_alc5623_jack_notifier(struct notifier_block *self,
 			      unsigned long action, void *dev)
 {
-        pr_info("%s++", __func__);
+          
 	struct snd_soc_jack *jack = dev;
 	struct snd_soc_codec *codec = jack->codec;
 	struct snd_soc_card *card = codec->card;
@@ -242,14 +238,13 @@ static int tegra_alc5623_event_int_spk(struct snd_soc_dapm_widget *w,
 	}
 
 	if (!(machine->gpio_requested & GPIO_SPKR_EN)) {
-		if(pdata->gpio_spkr_en == -2)
+		if(pdata->gpio_spkr_en == -2) {
 			 snd_soc_update_bits(codec, ALC5623_GPIO_OUTPUT_PIN_CTRL,
                                 ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS,
-                                SND_SOC_DAPM_EVENT_ON(event) * 
-				ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS);
+                                !!SND_SOC_DAPM_EVENT_ON(event) * ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS);
+		}
 		return 0;
 	} 
-
 	gpio_set_value_cansleep(pdata->gpio_spkr_en,
 				SND_SOC_DAPM_EVENT_ON(event));
 
@@ -307,7 +302,7 @@ static const struct snd_kcontrol_new adam_controls[] = {
 
 static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 {
-        pr_info("%s++", __func__);
+          
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 	struct snd_soc_card *card = codec->card;
@@ -428,7 +423,7 @@ static struct snd_soc_card snd_soc_tegra_alc5623 = {
 
 static __devinit int tegra_alc5623_driver_probe(struct platform_device *pdev)
 {
-        pr_info("%s++", __func__);
+          
 	struct snd_soc_card *card = &snd_soc_tegra_alc5623;
 	struct tegra_alc5623 *machine;
 	struct tegra_alc5623_platform_data *pdata;
@@ -540,7 +535,7 @@ static struct platform_driver tegra_alc5623_driver = {
 
 static int __init tegra_alc5623_modinit(void)
 {
-        pr_info("%s++", __func__);
+          
 	return platform_driver_register(&tegra_alc5623_driver);
 }
 module_init(tegra_alc5623_modinit);
