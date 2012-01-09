@@ -129,7 +129,7 @@ config SND_SOC_TEGRA_ALC5623
         select SND_SOC_TEGRA30_I2S if ARCH_TEGRA_3x_SOC
         select SND_SOC_TEGRA20_SPDIF if ARCH_TEGRA_2x_SOC
         select SND_SOC_TEGRA30_SPDIF if ARCH_TEGRA_3x_SOC
-        select SND_SOC_WM8753
+        select SND_SOC_ALC5623
         select SND_SOC_SPDIF
         help
           Say Y or M here if you want to add support for SoC audio on Tegra

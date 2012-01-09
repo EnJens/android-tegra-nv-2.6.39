@@ -493,6 +493,7 @@ static int soc_ac97_dev_register(struct snd_soc_codec *codec)
 
 static int soc_pcm_apply_symmetry(struct snd_pcm_substream *substream)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
@@ -534,6 +535,7 @@ static int soc_pcm_apply_symmetry(struct snd_pcm_substream *substream)
  */
 static int soc_pcm_open(struct snd_pcm_substream *substream)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct snd_soc_platform *platform = rtd->platform;
@@ -732,6 +734,7 @@ static void close_delayed_work(struct work_struct *work)
  */
 static int soc_codec_close(struct snd_pcm_substream *substream)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_platform *platform = rtd->platform;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -794,6 +797,7 @@ static int soc_codec_close(struct snd_pcm_substream *substream)
  */
 static int soc_pcm_prepare(struct snd_pcm_substream *substream)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_platform *platform = rtd->platform;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -865,6 +869,7 @@ out:
 static int soc_pcm_hw_params(struct snd_pcm_substream *substream,
 				struct snd_pcm_hw_params *params)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_platform *platform = rtd->platform;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -935,6 +940,7 @@ codec_err:
  */
 static int soc_pcm_hw_free(struct snd_pcm_substream *substream)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_platform *platform = rtd->platform;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -968,6 +974,7 @@ static int soc_pcm_hw_free(struct snd_pcm_substream *substream)
 
 static int soc_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_platform *platform = rtd->platform;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -1001,6 +1008,7 @@ static int soc_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
  */
 static snd_pcm_uframes_t soc_pcm_pointer(struct snd_pcm_substream *substream)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_platform *platform = rtd->platform;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
@@ -1041,6 +1049,7 @@ static struct snd_pcm_ops soc_pcm_ops = {
 /* powers down audio subsystem for suspend */
 int snd_soc_suspend(struct device *dev)
 {
+        
 	struct snd_soc_card *card = dev_get_drvdata(dev);
 	struct snd_soc_codec *codec;
 	int i;
@@ -1160,6 +1169,7 @@ EXPORT_SYMBOL_GPL(snd_soc_suspend);
  */
 static void soc_resume_deferred(struct work_struct *work)
 {
+        
 	struct snd_soc_card *card =
 			container_of(work, struct snd_soc_card, deferred_resume_work);
 	struct snd_soc_codec *codec;
@@ -1261,6 +1271,7 @@ static void soc_resume_deferred(struct work_struct *work)
 /* powers up audio subsystem after a suspend */
 int snd_soc_resume(struct device *dev)
 {
+        
 	struct snd_soc_card *card = dev_get_drvdata(dev);
 	int i;
 
@@ -1294,6 +1305,7 @@ static struct snd_soc_dai_ops null_dai_ops = {
 
 static int soc_bind_dai_link(struct snd_soc_card *card, int num)
 {
+        
 	struct snd_soc_dai_link *dai_link = &card->dai_link[num];
 	struct snd_soc_pcm_runtime *rtd = &card->rtd[num];
 	struct snd_soc_codec *codec;
@@ -1378,6 +1390,7 @@ out:
 
 static void soc_remove_codec(struct snd_soc_codec *codec)
 {
+        
 	int err;
 
 	if (codec->driver->remove) {
@@ -1399,6 +1412,7 @@ static void soc_remove_codec(struct snd_soc_codec *codec)
 
 static void soc_remove_dai_link(struct snd_soc_card *card, int num)
 {
+        
 	struct snd_soc_pcm_runtime *rtd = &card->rtd[num];
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_platform *platform = rtd->platform;
@@ -1456,6 +1470,7 @@ static void soc_remove_dai_link(struct snd_soc_card *card, int num)
 static void soc_set_name_prefix(struct snd_soc_card *card,
 				struct snd_soc_codec *codec)
 {
+        
 	int i;
 
 	if (card->codec_conf == NULL)
@@ -1473,6 +1488,7 @@ static void soc_set_name_prefix(struct snd_soc_card *card,
 static int soc_probe_codec(struct snd_soc_card *card,
 			   struct snd_soc_codec *codec)
 {
+        
 	int ret = 0;
 	const struct snd_soc_codec_driver *driver = codec->driver;
 
@@ -1521,6 +1537,7 @@ static int soc_post_component_init(struct snd_soc_card *card,
 				   struct snd_soc_codec *codec,
 				   int num, int dailess)
 {
+        
 	struct snd_soc_dai_link *dai_link = NULL;
 	struct snd_soc_aux_dev *aux_dev = NULL;
 	struct snd_soc_pcm_runtime *rtd;
@@ -1587,6 +1604,7 @@ static int soc_post_component_init(struct snd_soc_card *card,
 
 static int soc_probe_dai_link(struct snd_soc_card *card, int num)
 {
+        
 	struct snd_soc_dai_link *dai_link = &card->dai_link[num];
 	struct snd_soc_pcm_runtime *rtd = &card->rtd[num];
 	struct snd_soc_codec *codec = rtd->codec;
@@ -1779,6 +1797,7 @@ static void soc_remove_aux_dev(struct snd_soc_card *card, int num)
 static int snd_soc_init_codec_cache(struct snd_soc_codec *codec,
 				    enum snd_soc_compress_type compress_type)
 {
+        
 	int ret;
 
 	if (codec->cache_init)
@@ -1799,6 +1818,7 @@ static int snd_soc_init_codec_cache(struct snd_soc_codec *codec,
 
 static void snd_soc_instantiate_card(struct snd_soc_card *card)
 {
+        
 	struct snd_soc_codec *codec;
 	struct snd_soc_codec_conf *codec_conf;
 	enum snd_soc_compress_type compress_type;
@@ -1975,6 +1995,7 @@ static void snd_soc_instantiate_cards(void)
 /* probes a new socdev */
 static int soc_probe(struct platform_device *pdev)
 {
+        
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
 	int ret = 0;
 
@@ -2078,6 +2099,7 @@ static struct platform_driver soc_driver = {
 /* create a new pcm */
 static int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 {
+        
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_platform *platform = rtd->platform;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
@@ -2327,6 +2349,7 @@ EXPORT_SYMBOL_GPL(snd_soc_test_bits);
 int snd_soc_set_runtime_hwparams(struct snd_pcm_substream *substream,
 	const struct snd_pcm_hardware *hw)
 {
+        
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	runtime->hw.info = hw->info;
 	runtime->hw.formats = hw->formats;
@@ -2401,6 +2424,7 @@ EXPORT_SYMBOL_GPL(snd_soc_cnew);
 int snd_soc_add_controls(struct snd_soc_codec *codec,
 	const struct snd_kcontrol_new *controls, int num_controls)
 {
+        
 	struct snd_card *card = codec->card->snd_card;
 	int err, i;
 
@@ -3090,6 +3114,7 @@ EXPORT_SYMBOL_GPL(snd_soc_put_volsw_2r_sx);
 int snd_soc_dai_set_sysclk(struct snd_soc_dai *dai, int clk_id,
 	unsigned int freq, int dir)
 {
+        
 	if (dai->driver && dai->driver->ops->set_sysclk)
 		return dai->driver->ops->set_sysclk(dai, clk_id, freq, dir);
 	else if (dai->codec && dai->codec->driver->set_sysclk)
@@ -3112,6 +3137,7 @@ EXPORT_SYMBOL_GPL(snd_soc_dai_set_sysclk);
 int snd_soc_codec_set_sysclk(struct snd_soc_codec *codec, int clk_id,
 	unsigned int freq, int dir)
 {
+        
 	if (codec->driver->set_sysclk)
 		return codec->driver->set_sysclk(codec, clk_id, freq, dir);
 	else
@@ -3286,6 +3312,7 @@ EXPORT_SYMBOL_GPL(snd_soc_dai_digital_mute);
  */
 int snd_soc_register_card(struct snd_soc_card *card)
 {
+        
 	int i;
 
 	if (!card->name || !card->dev)
@@ -3408,6 +3435,7 @@ static inline char *fmt_multiple_name(struct device *dev,
 int snd_soc_register_dai(struct device *dev,
 		struct snd_soc_dai_driver *dai_drv)
 {
+        
 	struct snd_soc_dai *dai;
 
 	dev_dbg(dev, "dai register %s\n", dev_name(dev));
@@ -3474,6 +3502,7 @@ EXPORT_SYMBOL_GPL(snd_soc_unregister_dai);
 int snd_soc_register_dais(struct device *dev,
 		struct snd_soc_dai_driver *dai_drv, size_t count)
 {
+        
 	struct snd_soc_dai *dai;
 	int i, ret = 0;
 
@@ -3547,6 +3576,7 @@ EXPORT_SYMBOL_GPL(snd_soc_unregister_dais);
 int snd_soc_register_platform(struct device *dev,
 		struct snd_soc_platform_driver *platform_drv)
 {
+        
 	struct snd_soc_platform *platform;
 
 	dev_dbg(dev, "platform register %s\n", dev_name(dev));
@@ -3645,6 +3675,7 @@ int snd_soc_register_codec(struct device *dev,
 			   struct snd_soc_dai_driver *dai_drv,
 			   int num_dai)
 {
+        
 	size_t reg_size;
 	struct snd_soc_codec *codec;
 	int ret, i;

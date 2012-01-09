@@ -163,6 +163,7 @@ static const char * const snd_pcm_hw_param_names[] = {
 int snd_pcm_hw_refine(struct snd_pcm_substream *substream, 
 		      struct snd_pcm_hw_params *params)
 {
+        
 	unsigned int k;
 	struct snd_pcm_hardware *hw;
 	struct snd_interval *i = NULL;
@@ -184,8 +185,9 @@ int snd_pcm_hw_refine(struct snd_pcm_substream *substream,
 
 	for (k = SNDRV_PCM_HW_PARAM_FIRST_MASK; k <= SNDRV_PCM_HW_PARAM_LAST_MASK; k++) {
 		m = hw_param_mask(params, k);
-		if (snd_mask_empty(m))
+		if (snd_mask_empty(m)){
 			return -EINVAL;
+		}
 		if (!(params->rmask & (1 << k)))
 			continue;
 #ifdef RULES_DEBUG
@@ -198,14 +200,16 @@ int snd_pcm_hw_refine(struct snd_pcm_substream *substream,
 #endif
 		if (changed)
 			params->cmask |= 1 << k;
-		if (changed < 0)
+		if (changed < 0){
 			return changed;
+		}
 	}
 
 	for (k = SNDRV_PCM_HW_PARAM_FIRST_INTERVAL; k <= SNDRV_PCM_HW_PARAM_LAST_INTERVAL; k++) {
 		i = hw_param_interval(params, k);
-		if (snd_interval_empty(i))
+		if (snd_interval_empty(i)){
 			return -EINVAL;
+		}
 		if (!(params->rmask & (1 << k)))
 			continue;
 #ifdef RULES_DEBUG
@@ -229,8 +233,9 @@ int snd_pcm_hw_refine(struct snd_pcm_substream *substream,
 #endif
 		if (changed)
 			params->cmask |= 1 << k;
-		if (changed < 0)
+		if (changed < 0){
 			return changed;
+		}
 	}
 
 	for (k = 0; k < constrs->rules_num; k++)
@@ -294,8 +299,9 @@ int snd_pcm_hw_refine(struct snd_pcm_substream *substream,
 				vstamps[r->var] = stamp;
 				again = 1;
 			}
-			if (changed < 0)
+			if (changed < 0){
 				return changed;
+			}
 			stamp++;
 		}
 	} while (again);
@@ -371,6 +377,7 @@ static int period_to_usecs(struct snd_pcm_runtime *runtime)
 static int snd_pcm_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params)
 {
+        
 	struct snd_pcm_runtime *runtime;
 	int err, usecs;
 	unsigned int bits;
@@ -472,17 +479,20 @@ static int snd_pcm_hw_params(struct snd_pcm_substream *substream,
 static int snd_pcm_hw_params_user(struct snd_pcm_substream *substream,
 				  struct snd_pcm_hw_params __user * _params)
 {
+        
 	struct snd_pcm_hw_params *params;
 	int err;
 
 	params = memdup_user(_params, sizeof(*params));
-	if (IS_ERR(params))
+	if (IS_ERR(params)){
 		return PTR_ERR(params);
+	}
 
 	err = snd_pcm_hw_params(substream, params);
 	if (copy_to_user(_params, params, sizeof(*params))) {
-		if (!err)
+		if (!err){
 			err = -EFAULT;
+		}
 	}
 
 	kfree(params);
@@ -2011,6 +2021,7 @@ int snd_pcm_open_substream(struct snd_pcm *pcm, int stream,
 			   struct file *file,
 			   struct snd_pcm_substream **rsubstream)
 {
+        
 	struct snd_pcm_substream *substream;
 	int err;
 
@@ -2030,6 +2041,7 @@ int snd_pcm_open_substream(struct snd_pcm *pcm, int stream,
 
 	if ((err = substream->ops->open(substream)) < 0)
 		goto error;
+
 
 	substream->hw_opened = 1;
 
@@ -2054,6 +2066,7 @@ static int snd_pcm_open_file(struct file *file,
 			     int stream,
 			     struct snd_pcm_file **rpcm_file)
 {
+        
 	struct snd_pcm_file *pcm_file;
 	struct snd_pcm_substream *substream;
 	struct snd_pcm_str *str;
@@ -2085,6 +2098,7 @@ static int snd_pcm_open_file(struct file *file,
 
 static int snd_pcm_playback_open(struct inode *inode, struct file *file)
 {
+        
 	struct snd_pcm *pcm;
 	int err = nonseekable_open(inode, file);
 	if (err < 0)
@@ -2107,6 +2121,7 @@ static int snd_pcm_capture_open(struct inode *inode, struct file *file)
 
 static int snd_pcm_open(struct file *file, struct snd_pcm *pcm, int stream)
 {
+        
 	int err;
 	struct snd_pcm_file *pcm_file;
 	wait_queue_t wait;
@@ -3378,6 +3393,7 @@ out:
 static int snd_pcm_hw_params_old_user(struct snd_pcm_substream *substream,
 				      struct snd_pcm_hw_params_old __user * _oparams)
 {
+        
 	struct snd_pcm_hw_params *params;
 	struct snd_pcm_hw_params_old *oparams = NULL;
 	int err;

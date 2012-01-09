@@ -143,6 +143,7 @@ static struct snd_minor *autoload_device(unsigned int minor)
 
 static int snd_open(struct inode *inode, struct file *file)
 {
+	
 	unsigned int minor = iminor(inode);
 	struct snd_minor *mptr = NULL;
 	const struct file_operations *old_fops;

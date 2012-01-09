@@ -203,10 +203,7 @@ static void __init tegra_adam_init(void)
 	adam_gpu_register_devices();
 
 	/* Register Audio devices */
-//	adam_audio_register_devices();
-
-	/* Register Jack devices */
-//	adam_jack_register_devices();
+	adam_audio_register_devices();
 
 	/* Register AES encryption devices */
 	adam_aes_register_devices();
