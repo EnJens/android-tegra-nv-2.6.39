@@ -238,11 +238,14 @@ static int tegra_alc5623_event_int_spk(struct snd_soc_dapm_widget *w,
 	}
 
 	if (!(machine->gpio_requested & GPIO_SPKR_EN)) {
-		if(pdata->gpio_spkr_en == -2) {
+/*		if(pdata->gpio_spkr_en == -2) {
+			 snd_soc_update_bits(codec, ALC5623_PWR_MANAG_ADD1,
+                                ALC5623_PWR_ADD1_AUX_OUT_AMP,
+                                !!SND_SOC_DAPM_EVENT_ON(event) * ALC5623_PWR_ADD1_AUX_OUT_AMP);
 			 snd_soc_update_bits(codec, ALC5623_GPIO_OUTPUT_PIN_CTRL,
                                 ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS,
                                 !!SND_SOC_DAPM_EVENT_ON(event) * ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS);
-		}
+		}*/
 		return 0;
 	} 
 	gpio_set_value_cansleep(pdata->gpio_spkr_en,
@@ -275,7 +278,12 @@ static int tegra_alc5623_event_int_mic(struct snd_soc_dapm_widget *w,
         return 0;
 }
 
+
+
+
 static const struct snd_soc_dapm_widget adam_dapm_widgets[] = {
+	SND_SOC_DAPM_PGA("Ext Amp", ALC5623_GPIO_OUTPUT_PIN_CTRL, 1, 0, NULL, 0),
+	SND_SOC_DAPM_PGA("Auxout Amp", ALC5623_PWR_MANAG_ADD1, 1, 0, NULL, 0),
 	SND_SOC_DAPM_SPK("Int Spk", tegra_alc5623_event_int_spk),
 	SND_SOC_DAPM_HP("Headphone Jack", NULL),
 	SND_SOC_DAPM_MIC("Int Mic", NULL),
@@ -285,8 +293,10 @@ static const struct snd_soc_dapm_widget adam_dapm_widgets[] = {
 static const struct snd_soc_dapm_route adam_audio_map[] = {
 	{"Headphone Jack", NULL, "HPR"},
 	{"Headphone Jack", NULL, "HPL"},
-	{"Int Spk", NULL, "AUXOUTR"},
-	{"Int Spk", NULL, "AUXOUTL"},
+	{"Auxout Amp", NULL, "AUXOUTR"},
+	{"Auxout Amp", NULL, "AUXOUTL"},
+	{"Ext Amp", NULL, "Auxout Amp"},
+	{"Int Spk", NULL, "Ext Amp"},
 	{"Mic Bias1", NULL, "Int Mic"},
 	{"MIC1", NULL, "Mic Bias1"},
 	{"AUXINR", NULL, "FM Radio"},
