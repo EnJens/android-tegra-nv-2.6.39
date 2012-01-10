@@ -934,8 +934,10 @@ static void hci_power_on(struct work_struct *work)
 
 	BT_DBG("%s", hdev->name);
 
-	if (hci_dev_open(hdev->id) < 0)
-		return;
+	// ADAM patch: BT turns on cleaner if we allow bluedroid
+	// to open it via the ioctl HCIDEVUP
+	//if (hci_dev_open(hdev->id) < 0)
+	//	return;
 
 	if (test_bit(HCI_AUTO_OFF, &hdev->flags))
 		mod_timer(&hdev->off_timer,
