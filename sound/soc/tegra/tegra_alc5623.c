@@ -139,15 +139,19 @@ static struct snd_soc_ops tegra_alc5623_ops = {
 	.hw_params = tegra_alc5623_hw_params,
 };
 
-#if 0
 static struct snd_soc_ops tegra_voice_ops = {
-	.hw_params = tegra_voice_hw_params,
+	.hw_params = tegra_alc5623_hw_params,
 };
+
+static int tegra_spdif_hw_params(struct snd_pcm_substream *substream,
+                                        struct snd_pcm_hw_params *params)
+{
+        return 0;
+}
 
 static struct snd_soc_ops tegra_spdif_ops = {
 	.hw_params = tegra_spdif_hw_params,
 };
-#endif
 
 static struct snd_soc_jack tegra_alc5623_hp_jack;
 
@@ -403,7 +407,6 @@ static struct snd_soc_dai_link tegra_alc5623_dai[] = {
 		.init = tegra_alc5623_init,
 		.ops = &tegra_alc5623_ops,
 	},
-#if 0
 	{
 		.name = "VOICE",
 		.stream_name = "Tegra Generic Voice",
@@ -422,7 +425,6 @@ static struct snd_soc_dai_link tegra_alc5623_dai[] = {
 		.codec_dai_name = "dit-hifi",
 		.ops = &tegra_spdif_ops,
 	}
-#endif
 };
 
 static struct snd_soc_card snd_soc_tegra_alc5623 = {
