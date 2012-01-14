@@ -37,6 +37,7 @@ struct bcm4329_rfkill_data {
 	int gpio_reset;
 	int gpio_shutdown;
 	int delay;
+	bool state;
 	struct clk *bt_32k_clk;
 };
 
@@ -45,6 +46,8 @@ static struct bcm4329_rfkill_data *bcm4329_rfkill;
 static int bcm4329_bt_rfkill_set_power(void *data, bool blocked)
 {
 	if (blocked) {
+		if (!bcm4329_rfkill->state)
+			return 0;
 		if (bcm4329_rfkill->gpio_shutdown)
 			gpio_direction_output(bcm4329_rfkill->gpio_shutdown, 0);
 		if (bcm4329_rfkill->gpio_reset)
@@ -52,6 +55,8 @@ static int bcm4329_bt_rfkill_set_power(void *data, bool blocked)
 		if (bcm4329_rfkill->bt_32k_clk)
 			clk_disable(bcm4329_rfkill->bt_32k_clk);
 	} else {
+		if (bcm4329_rfkill->state)
+			return 0;
 		if (bcm4329_rfkill->bt_32k_clk)
 			clk_enable(bcm4329_rfkill->bt_32k_clk);
 		if (bcm4329_rfkill->gpio_shutdown)
@@ -88,6 +93,8 @@ static int bcm4329_rfkill_probe(struct platform_device *pdev)
 	bcm4329_rfkill = kzalloc(sizeof(*bcm4329_rfkill), GFP_KERNEL);
 	if (!bcm4329_rfkill)
 		return -ENOMEM;
+	
+	bcm4329_rfkill->state = 0;
 
 	bcm4329_rfkill->bt_32k_clk = clk_get(&pdev->dev, "bcm4329_32k_clk");
 	if (IS_ERR(bcm4329_rfkill->bt_32k_clk)) {
