@@ -46,7 +46,7 @@
 
 static struct resource adam_bcm4329_rfkill_resources[] = {
 	{
-		.name   = "bcm4329_nshutdown_gpio",
+		.name   = "bcm4329_nreset_gpio",
 		.start  = ADAM_BT_RST,
 		.end    = ADAM_BT_RST,
 		.flags  = IORESOURCE_IO,
@@ -83,7 +83,7 @@ void __init adam_setup_bluesleep(void)
 		return;
 	}
 
-	res = kzalloc(sizeof(struct resource) * 3, GFP_KERNEL);
+	res = kzalloc(sizeof(struct resource) * 2, GFP_KERNEL);
 	if (!res) {
 		pr_err("unable to allocate resource for bluesleep\n");
 		goto err_free_dev;
@@ -94,17 +94,12 @@ void __init adam_setup_bluesleep(void)
 	res[0].end    = TEGRA_GPIO_PU6;
 	res[0].flags  = IORESOURCE_IO;
 
-	res[1].name   = "gpio_ext_wake";
-	res[1].start  = TEGRA_GPIO_PU1;
-	res[1].end    = TEGRA_GPIO_PU1;
-	res[1].flags  = IORESOURCE_IO;
+	res[1].name   = "host_wake";
+	res[1].start  = gpio_to_irq(TEGRA_GPIO_PU6);
+	res[1].end    = gpio_to_irq(TEGRA_GPIO_PU6);
+	res[1].flags  = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE;
 
-	res[2].name   = "host_wake";
-	res[2].start  = gpio_to_irq(TEGRA_GPIO_PU6);
-	res[2].end    = gpio_to_irq(TEGRA_GPIO_PU6);
-	res[2].flags  = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE;
-
-	if (platform_device_add_resources(pdev, res, 3)) {
+	if (platform_device_add_resources(pdev, res, 2)) {
 		pr_err("unable to add resources to bluesleep device\n");
 		goto err_free_res;
 	}
@@ -115,7 +110,6 @@ void __init adam_setup_bluesleep(void)
 	}
 
 	tegra_gpio_enable(TEGRA_GPIO_PU6);
-	tegra_gpio_enable(TEGRA_GPIO_PU1);
 
 	kfree(res);
 
