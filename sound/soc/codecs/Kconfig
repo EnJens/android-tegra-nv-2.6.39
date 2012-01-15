@@ -382,11 +382,3 @@ config SND_SOC_WM2000
 
 config SND_SOC_WM9090
 	tristate
-
-config ALC_SWAP_CHANNELS
-        bool "Swap left/right audio channels on ALC5623"
-        depends on SND_SOC_TEGRA_ALC5623
-        help
-         On the Adam and other boards of Malata origin using the ALC5623
-         the audio channels are reversed. Select this option to correct
-         this.
