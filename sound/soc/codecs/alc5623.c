@@ -694,21 +694,18 @@ static int alc5623_set_dai_fmt(struct snd_soc_dai *codec_dai,
 	case SND_SOC_DAIFMT_NB_NF:
 		break;
 	case SND_SOC_DAIFMT_IB_IF:
-		iface |= ALC5623_DAI_MAIN_I2S_BCLK_POL_CTRL;
+		iface |= ALC5623_DAI_MAIN_I2S_BCLK_POL_CTRL | ALC5623_DAI_DAC_DATA_L_R_SWAP;
 		break;
 	case SND_SOC_DAIFMT_IB_NF:
 		iface |= ALC5623_DAI_MAIN_I2S_BCLK_POL_CTRL;
 		break;
 	case SND_SOC_DAIFMT_NB_IF:
+		iface |= ALC5623_DAI_DAC_DATA_L_R_SWAP;
 		break;
 	default:
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_ALC_SWAP_CHANNELS
-	iface |= ALC5623_DAI_DAC_DATA_L_R_SWAP;
-#endif
-	
 	return snd_soc_write(codec, ALC5623_DAI_CONTROL, iface);
 }
 
