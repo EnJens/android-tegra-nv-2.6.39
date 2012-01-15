@@ -97,7 +97,7 @@ void __init adam_setup_bluesleep(void)
 	res[1].name   = "host_wake";
 	res[1].start  = gpio_to_irq(TEGRA_GPIO_PU6);
 	res[1].end    = gpio_to_irq(TEGRA_GPIO_PU6);
-	res[1].flags  = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE;
+	res[1].flags  = IORESOURCE_IRQ | IORESOURCE_IRQ_LOWEDGE;
 
 	if (platform_device_add_resources(pdev, res, 2)) {
 		pr_err("unable to add resources to bluesleep device\n");
