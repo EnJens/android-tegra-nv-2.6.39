@@ -83,6 +83,7 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_card *card = codec->card;
 	struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
+	struct tegra_alc5623_platform_data *pdata = machine->pdata;
 	int srate, mclk;
 	int err;
 
@@ -107,16 +108,10 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 		return err;
 	}
 
-	if (machine_is_adam())
-		err = snd_soc_dai_set_fmt(codec_dai,
-						SND_SOC_DAIFMT_I2S |
-						SND_SOC_DAIFMT_NB_IF |
-						SND_SOC_DAIFMT_CBS_CFS);
-	else
-		err = snd_soc_dai_set_fmt(codec_dai,
-						SND_SOC_DAIFMT_I2S |
-						SND_SOC_DAIFMT_NB_NF |
-						SND_SOC_DAIFMT_CBS_CFS);
+	err = snd_soc_dai_set_fmt(codec_dai,
+					SND_SOC_DAIFMT_I2S |
+					(pdata->channel_swap ? SND_SOC_DAIFMT_NB_IF : SND_SOC_DAIFMT_NB_NF) |
+					SND_SOC_DAIFMT_CBS_CFS);
 	if (err < 0) {
 		dev_err(card->dev, "codec_dai fmt not set\n");
 		return err;
