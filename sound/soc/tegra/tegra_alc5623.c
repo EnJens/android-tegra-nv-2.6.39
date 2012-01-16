@@ -285,8 +285,8 @@ static int tegra_alc5623_event_int_mic(struct snd_soc_dapm_widget *w,
 
 
 
-
-static const struct snd_soc_dapm_widget adam_dapm_widgets[] = {
+#ifdef CONFIG_MACH_ADAM
+static const struct snd_soc_dapm_widget dapm_widgets[] = {
 	SND_SOC_DAPM_PGA("Ext Amp", ALC5623_GPIO_OUTPUT_PIN_CTRL, 1, 0, NULL, 0),
 	SND_SOC_DAPM_PGA("Auxout Amp", ALC5623_PWR_MANAG_ADD1, 1, 0, NULL, 0),
 	SND_SOC_DAPM_SPK("Int Spk", tegra_alc5623_event_int_spk),
@@ -295,7 +295,7 @@ static const struct snd_soc_dapm_widget adam_dapm_widgets[] = {
 	SND_SOC_DAPM_LINE("FM Radio", NULL),
 };
 
-static const struct snd_soc_dapm_route adam_audio_map[] = {
+static const struct snd_soc_dapm_route audio_map[] = {
 	{"Headphone Jack", NULL, "HPR"},
 	{"Headphone Jack", NULL, "HPL"},
 	{"Auxout Amp", "HPOut Mix", "AUXOUTR"},
@@ -308,12 +308,21 @@ static const struct snd_soc_dapm_route adam_audio_map[] = {
 	{"AUXINL", NULL, "FM Radio"},
 };
 
-static const struct snd_kcontrol_new adam_controls[] = {
+static const struct snd_kcontrol_new controls[] = {
 	SOC_DAPM_PIN_SWITCH("Int Spk"),
 	SOC_DAPM_PIN_SWITCH("Headphone Jack"),
 	SOC_DAPM_PIN_SWITCH("Int Mic"),
 	SOC_DAPM_PIN_SWITCH("FM"),
 };
+
+static const char* nc_pins[] = {
+	"SPKOUT",
+	"SPKOUTN",
+	"LINEINL",
+	"LINEINR",
+	"MIC2",
+};
+#endif
 
 static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 {
@@ -323,7 +332,7 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 	struct snd_soc_card *card = codec->card;
 	struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
 	struct tegra_alc5623_platform_data *pdata = machine->pdata;
-	int ret;
+	int ret, i;
 
 	if (gpio_is_valid(pdata->gpio_spkr_en)) {
 		ret = gpio_request(pdata->gpio_spkr_en, "spkr_en");
@@ -351,18 +360,18 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
                 gpio_direction_output(pdata->gpio_int_mic_en, 0);
         }
 
-	if (machine_is_adam()) {
-		ret = snd_soc_add_controls(codec, adam_controls,
-				ARRAY_SIZE(adam_controls));
-		if (ret < 0)
-			return ret;
+	ret = snd_soc_add_controls(codec, controls,
+			ARRAY_SIZE(controls));
 
-		snd_soc_dapm_new_controls(dapm, adam_dapm_widgets,
-				ARRAY_SIZE(adam_dapm_widgets));
+	if (ret < 0)
+		return ret;
 
-		snd_soc_dapm_add_routes(dapm, adam_audio_map,
-					ARRAY_SIZE(adam_audio_map));
-	}
+	snd_soc_dapm_new_controls(dapm, dapm_widgets,
+			ARRAY_SIZE(dapm_widgets));
+
+	snd_soc_dapm_add_routes(dapm, audio_map,
+				ARRAY_SIZE(audio_map));
+
 
 	if (gpio_is_valid(pdata->gpio_hp_det)) {
 		tegra_alc5623_hp_jack_gpio.gpio = pdata->gpio_hp_det;
@@ -384,12 +393,8 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 
 	snd_soc_dapm_force_enable_pin(dapm, "Mic Bias1");
 
-	if (machine_is_adam()) {
-		snd_soc_dapm_nc_pin(dapm, "SPKOUT");
-		snd_soc_dapm_nc_pin(dapm, "SPKOUTN");
-		snd_soc_dapm_nc_pin(dapm, "LINEINL");
-		snd_soc_dapm_nc_pin(dapm, "LINEINR");
-		snd_soc_dapm_nc_pin(dapm, "MIC2");
+	for(i = 0; i < ARRAY_SIZE(nc_pins); i++) {
+		snd_soc_dapm_nc_pin(dapm, nc_pins[i]);
 	}
 
 	snd_soc_dapm_sync(dapm);
