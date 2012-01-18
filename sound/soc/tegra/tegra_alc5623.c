@@ -150,9 +150,19 @@ static int tegra_spdif_hw_params(struct snd_pcm_substream *substream,
         return 0;
 }
 
+static int tegra_voice_hw_params(struct snd_pcm_substream *substream,
+                                        struct snd_pcm_hw_params *params)
+{
+        return 0;
+}
+
 static struct snd_soc_ops tegra_spdif_ops = {
 	.hw_params = tegra_spdif_hw_params,
 };
+
+//static struct snd_soc_ops tegra_voice_ops = {
+//	.hw_params = tegra_spdif_hw_params,
+//};
 
 static struct snd_soc_jack tegra_alc5623_hp_jack;
 
@@ -441,7 +451,7 @@ static struct snd_soc_dai_link tegra_alc5623_dai[] = {
 		.init = tegra_alc5623_init,
 		.ops = &tegra_alc5623_ops,
 	},
-/*	{
+	{
 		.name = "VOICE",
 		.stream_name = "Tegra Generic Voice",
 		.codec_name = "tegra-generic-codec",
@@ -449,7 +459,7 @@ static struct snd_soc_dai_link tegra_alc5623_dai[] = {
 		.cpu_dai_name = "tegra20-i2s.1",
 		.codec_dai_name = "tegra_generic_voice_codec",
 		.ops = &tegra_voice_ops,
-	},*/
+	},
 	{
 		.name = "SPDIF",
 		.stream_name = "SPDIF PCM",
