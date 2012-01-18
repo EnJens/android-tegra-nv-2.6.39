@@ -27,6 +27,7 @@ snd-soc-tegra-wm8753-objs := tegra_wm8753.o
 snd-soc-tegra-max98088-objs := tegra_max98088.o
 snd-soc-tegra-aic326x-objs := tegra_aic326x.o
 snd-soc-tegra-alc5623-objs := tegra_alc5623.o
+snd-soc-tegra-alc5623-objs := tegra_alc5623.o tegra_generic_codec.o
 
 obj-$(CONFIG_SND_SOC_TEGRA_WM8903) += snd-soc-tegra-wm8903.o
 obj-$(CONFIG_SND_SOC_TEGRA_WM8753) += snd-soc-tegra-wm8753.o
