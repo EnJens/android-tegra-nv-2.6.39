@@ -68,7 +68,6 @@ struct tegra_alc5623 {
 	struct regulator *spk_reg;
 	struct regulator *dmic_reg;
 	int gpio_requested;
-	bool swap_channels;
 #ifdef CONFIG_SWITCH
 	int jack_status;
 #endif
@@ -77,13 +76,13 @@ struct tegra_alc5623 {
 static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 					struct snd_pcm_hw_params *params)
 {
+          
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_card *card = codec->card;
 	struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
-	struct tegra_alc5623_platform_data *pdata = machine->pdata;
 	int srate, mclk;
 	int err;
 
@@ -108,10 +107,16 @@ static int tegra_alc5623_hw_params(struct snd_pcm_substream *substream,
 		return err;
 	}
 
-	err = snd_soc_dai_set_fmt(codec_dai,
-				SND_SOC_DAIFMT_I2S |
-		(machine->swap_channels? SND_SOC_DAIFMT_NB_IF : SND_SOC_DAIFMT_NB_NF) |
-				SND_SOC_DAIFMT_CBS_CFS);
+	if (machine_is_adam())
+		err = snd_soc_dai_set_fmt(codec_dai,
+						SND_SOC_DAIFMT_I2S |
+						SND_SOC_DAIFMT_NB_IF |
+						SND_SOC_DAIFMT_CBS_CFS);
+	else
+		err = snd_soc_dai_set_fmt(codec_dai,
+						SND_SOC_DAIFMT_I2S |
+						SND_SOC_DAIFMT_NB_NF |
+						SND_SOC_DAIFMT_CBS_CFS);
 	if (err < 0) {
 		dev_err(card->dev, "codec_dai fmt not set\n");
 		return err;
@@ -186,6 +191,7 @@ static int tegra_alc5623_jack_notifier(struct notifier_block *self,
 	enum headset_state state = BIT_NO_HEADSET;
 
 	if (jack == &tegra_alc5623_hp_jack) {
+        	pr_info("%s-jack jack %d", __func__, action);
 		machine->jack_status &= ~SND_JACK_HEADPHONE;
 		machine->jack_status |= (action & SND_JACK_HEADPHONE);
 	} else {
@@ -206,6 +212,7 @@ static int tegra_alc5623_jack_notifier(struct notifier_block *self,
 		state = BIT_NO_HEADSET;
 	}
 
+        pr_info("%s-state of the union:%d, state of jack: %d", __func__,state, machine->jack_status);
 	switch_set_state(&tegra_alc5623_headset_switch, state);
 
 	return NOTIFY_OK;
@@ -224,24 +231,6 @@ static struct snd_soc_jack_pin tegra_alc5623_hp_jack_pins[] = {
 
 #endif
 
-static int tegra_alc5623_event_pre_channel(struct snd_soc_dapm_widget *w,
-                                        struct snd_kcontrol *k, int event)
-{
-        struct snd_soc_dapm_context *dapm = w->dapm;
-        struct snd_soc_card *card = dapm->card;
-        struct snd_soc_codec *codec = dapm->codec;
-        struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
-        struct tegra_alc5623_platform_data *pdata = machine->pdata;
-
-#ifdef CONFIG_SWITCH
-	machine->swap_channels = (machine->jack_status == SND_JACK_HEADPHONE) ||
-				 (machine->jack_status == SND_JACK_HEADSET);
-#else
-	machine->swap_channels = (bool) snd_soc_dapm_get_pin_status(dapm,"Headphone Jack");
-
-#endif
-	return 0;
-}
 static int tegra_alc5623_event_int_spk(struct snd_soc_dapm_widget *w,
 					struct snd_kcontrol *k, int event)
 {
@@ -259,6 +248,14 @@ static int tegra_alc5623_event_int_spk(struct snd_soc_dapm_widget *w,
 	}
 
 	if (!(machine->gpio_requested & GPIO_SPKR_EN)) {
+/*		if(pdata->gpio_spkr_en == -2) {
+			 snd_soc_update_bits(codec, ALC5623_PWR_MANAG_ADD1,
+                                ALC5623_PWR_ADD1_AUX_OUT_AMP,
+                                !!SND_SOC_DAPM_EVENT_ON(event) * ALC5623_PWR_ADD1_AUX_OUT_AMP);
+			 snd_soc_update_bits(codec, ALC5623_GPIO_OUTPUT_PIN_CTRL,
+                                ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS,
+                                !!SND_SOC_DAPM_EVENT_ON(event) * ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS);
+		}*/
 		return 0;
 	} 
 	gpio_set_value_cansleep(pdata->gpio_spkr_en,
@@ -266,25 +263,6 @@ static int tegra_alc5623_event_int_spk(struct snd_soc_dapm_widget *w,
 
 	return 0;
 }
-
-#if 0
-static int tegra_alc5623_event_hp(struct snd_soc_dapm_widget *w,
-					struct snd_kcontrol *k, int event)
-{
-        pr_info("%s++", __func__); 
-	struct snd_soc_dapm_context *dapm = w->dapm;
-	struct snd_soc_card *card = dapm->card;
-	struct snd_soc_codec *codec = dapm->codec;
-	struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
-	struct tegra_alc5623_platform_data *pdata = machine->pdata;
-
-	snd_soc_update_bits(codec, ALC5623_DAI_CONTROL,
-                        ALC5623_DAI_DAC_DATA_L_R_SWAP,
-                        (!!SND_SOC_DAPM_EVENT_ON(event))*ALC5623_DAI_DAC_DATA_L_R_SWAP);
-
-	return 0;
-}
-#endif 
 
 static int tegra_alc5623_event_int_mic(struct snd_soc_dapm_widget *w,
                                         struct snd_kcontrol *k, int event)
@@ -312,9 +290,8 @@ static int tegra_alc5623_event_int_mic(struct snd_soc_dapm_widget *w,
 
 
 
-#ifdef CONFIG_MACH_ADAM
-static const struct snd_soc_dapm_widget dapm_widgets[] = {
-	SND_SOC_DAPM_PRE("Channel Swap Detect", tegra_alc5623_event_pre_channel),
+
+static const struct snd_soc_dapm_widget adam_dapm_widgets[] = {
 	SND_SOC_DAPM_PGA("Ext Amp", ALC5623_GPIO_OUTPUT_PIN_CTRL, 1, 0, NULL, 0),
 	SND_SOC_DAPM_PGA("Auxout Amp", ALC5623_PWR_MANAG_ADD1, 1, 0, NULL, 0),
 	SND_SOC_DAPM_SPK("Int Spk", tegra_alc5623_event_int_spk),
@@ -323,11 +300,11 @@ static const struct snd_soc_dapm_widget dapm_widgets[] = {
 	SND_SOC_DAPM_LINE("FM Radio", NULL),
 };
 
-static const struct snd_soc_dapm_route audio_map[] = {
+static const struct snd_soc_dapm_route adam_audio_map[] = {
 	{"Headphone Jack", NULL, "HPR"},
 	{"Headphone Jack", NULL, "HPL"},
-	{"Auxout Amp", "HPOut Mix", "AUXOUTR"},
-	{"Auxout Amp", "HPOut Mix", "AUXOUTL"},
+	{"Auxout Amp", NULL, "AUXOUTR"},
+	{"Auxout Amp", NULL, "AUXOUTL"},
 	{"Ext Amp", NULL, "Auxout Amp"},
 	{"Int Spk", NULL, "Ext Amp"},
 	{"Mic Bias1", NULL, "Int Mic"},
@@ -336,21 +313,12 @@ static const struct snd_soc_dapm_route audio_map[] = {
 	{"AUXINL", NULL, "FM Radio"},
 };
 
-static const struct snd_kcontrol_new controls[] = {
+static const struct snd_kcontrol_new adam_controls[] = {
 	SOC_DAPM_PIN_SWITCH("Int Spk"),
 	SOC_DAPM_PIN_SWITCH("Headphone Jack"),
 	SOC_DAPM_PIN_SWITCH("Int Mic"),
 	SOC_DAPM_PIN_SWITCH("FM"),
 };
-
-static const char* nc_pins[] = {
-	"SPKOUT",
-	"SPKOUTN",
-	"LINEINL",
-	"LINEINR",
-	"MIC2",
-};
-#endif
 
 static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 {
@@ -360,7 +328,7 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 	struct snd_soc_card *card = codec->card;
 	struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
 	struct tegra_alc5623_platform_data *pdata = machine->pdata;
-	int ret, i;
+	int ret;
 
 	if (gpio_is_valid(pdata->gpio_spkr_en)) {
 		ret = gpio_request(pdata->gpio_spkr_en, "spkr_en");
@@ -388,18 +356,18 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
                 gpio_direction_output(pdata->gpio_int_mic_en, 0);
         }
 
-	ret = snd_soc_add_controls(codec, controls,
-			ARRAY_SIZE(controls));
+	if (machine_is_adam()) {
+		ret = snd_soc_add_controls(codec, adam_controls,
+				ARRAY_SIZE(adam_controls));
+		if (ret < 0)
+			return ret;
 
-	if (ret < 0)
-		return ret;
+		snd_soc_dapm_new_controls(dapm, adam_dapm_widgets,
+				ARRAY_SIZE(adam_dapm_widgets));
 
-	snd_soc_dapm_new_controls(dapm, dapm_widgets,
-			ARRAY_SIZE(dapm_widgets));
-
-	snd_soc_dapm_add_routes(dapm, audio_map,
-				ARRAY_SIZE(audio_map));
-
+		snd_soc_dapm_add_routes(dapm, adam_audio_map,
+					ARRAY_SIZE(adam_audio_map));
+	}
 
 	if (gpio_is_valid(pdata->gpio_hp_det)) {
 		tegra_alc5623_hp_jack_gpio.gpio = pdata->gpio_hp_det;
@@ -421,8 +389,12 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 
 	snd_soc_dapm_force_enable_pin(dapm, "Mic Bias1");
 
-	for(i = 0; i < ARRAY_SIZE(nc_pins); i++) {
-		snd_soc_dapm_nc_pin(dapm, nc_pins[i]);
+	if (machine_is_adam()) {
+		snd_soc_dapm_nc_pin(dapm, "SPKOUT");
+		snd_soc_dapm_nc_pin(dapm, "SPKOUTN");
+		snd_soc_dapm_nc_pin(dapm, "LINEINL");
+		snd_soc_dapm_nc_pin(dapm, "LINEINR");
+		snd_soc_dapm_nc_pin(dapm, "MIC2");
 	}
 
 	snd_soc_dapm_sync(dapm);
@@ -505,7 +477,6 @@ static __devinit int tegra_alc5623_driver_probe(struct platform_device *pdev)
 		machine->dmic_reg = 0;
 //	}
 
-	machine->swap_channels = false;
 #ifdef CONFIG_SWITCH
 	/* Addd h2w swith class support */
 	ret = switch_dev_register(&tegra_alc5623_headset_switch);
