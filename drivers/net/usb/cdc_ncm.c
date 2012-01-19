@@ -50,17 +50,22 @@
 #include <linux/version.h>
 #include <linux/timer.h>
 #include <linux/spinlock.h>
-#include <linux/atomic.h>
+#ifdef MBM_LOCAL_BUILD
+#include "usbnet.h"
+#include "cdc.h"
+#else
 #include <linux/usb/usbnet.h>
 #include <linux/usb/cdc.h>
+#endif
+#include <linux/pm_runtime.h>
 
-#define	DRIVER_VERSION				"23-Apr-2011"
+#define	DRIVER_VERSION				"01-June-2011-mbm-1"
 
 /* CDC NCM subclass 3.2.1 */
 #define USB_CDC_NCM_NDP16_LENGTH_MIN		0x10
 
 /* Maximum NTB length */
-#define	CDC_NCM_NTB_MAX_SIZE_TX			(16384 + 4) /* bytes, must be short terminated */
+#define	CDC_NCM_NTB_MAX_SIZE_TX			16384	/* bytes */
 #define	CDC_NCM_NTB_MAX_SIZE_RX			16384	/* bytes */
 
 /* Minimum value for MaxDatagramSize, ch. 6.2.9 */
@@ -134,8 +139,7 @@ struct cdc_ncm_ctx {
 	u16 tx_ndp_modulus;
 	u16 tx_seq;
 	u16 connected;
-	u8 data_claimed;
-	u8 control_claimed;
+	int packet_cnt;
 };
 
 static void cdc_ncm_tx_timeout(unsigned long arg);
@@ -190,6 +194,21 @@ cdc_ncm_do_request(struct cdc_ncm_ctx *ctx, struct usb_cdc_notification *req,
 		*actlen = err;
 
 	return 0;
+}
+
+static void cdc_ncm_set_urb_size(struct usbnet *dev, int size)
+{
+	struct cdc_ncm_ctx *ctx;
+	ctx = (struct cdc_ncm_ctx *)dev->data[0];
+  
+  	if ( size == ctx->rx_max) {
+		dev->rx_queue_enable = 1;
+	} else {
+		dev->rx_queue_enable = 0;
+	}
+
+	dev->rx_urb_size = size;
+	usbnet_unlink_rx_urbs(dev);
 }
 
 static u8 cdc_ncm_setup(struct cdc_ncm_ctx *ctx)
@@ -460,17 +479,6 @@ static void cdc_ncm_free(struct cdc_ncm_ctx *ctx)
 
 	del_timer_sync(&ctx->tx_timer);
 
-	if (ctx->data_claimed) {
-		usb_set_intfdata(ctx->data, NULL);
-		usb_driver_release_interface(driver_of(ctx->intf), ctx->data);
-	}
-
-	if (ctx->control_claimed) {
-		usb_set_intfdata(ctx->control, NULL);
-		usb_driver_release_interface(driver_of(ctx->intf),
-								ctx->control);
-	}
-
 	if (ctx->tx_rem_skb != NULL) {
 		dev_kfree_skb_any(ctx->tx_rem_skb);
 		ctx->tx_rem_skb = NULL;
@@ -495,7 +503,7 @@ static int cdc_ncm_bind(struct usbnet *dev, struct usb_interface *intf)
 
 	ctx = kmalloc(sizeof(*ctx), GFP_KERNEL);
 	if (ctx == NULL)
-		goto error;
+		return -ENODEV;
 
 	memset(ctx, 0, sizeof(*ctx));
 
@@ -568,46 +576,36 @@ advance:
 
 	/* check if we got everything */
 	if ((ctx->control == NULL) || (ctx->data == NULL) ||
-	    (ctx->ether_desc == NULL))
+	    (ctx->ether_desc == NULL) || (ctx->control != intf))
 		goto error;
 
 	/* claim interfaces, if any */
-	if (ctx->data != intf) {
-		temp = usb_driver_claim_interface(driver, ctx->data, dev);
-		if (temp)
-			goto error;
-		ctx->data_claimed = 1;
-	}
-
-	if (ctx->control != intf) {
-		temp = usb_driver_claim_interface(driver, ctx->control, dev);
-		if (temp)
-			goto error;
-		ctx->control_claimed = 1;
-	}
+	temp = usb_driver_claim_interface(driver, ctx->data, dev);
+	if (temp)
+		goto error;
 
 	iface_no = ctx->data->cur_altsetting->desc.bInterfaceNumber;
 
 	/* reset data interface */
 	temp = usb_set_interface(dev->udev, iface_no, 0);
 	if (temp)
-		goto error;
+		goto error2;
 
 	/* initialize data interface */
 	if (cdc_ncm_setup(ctx))
-		goto error;
+		goto error2;
 
 	/* configure data interface */
 	temp = usb_set_interface(dev->udev, iface_no, 1);
 	if (temp)
-		goto error;
+		goto error2;
 
 	cdc_ncm_find_endpoints(ctx, ctx->data);
 	cdc_ncm_find_endpoints(ctx, ctx->control);
 
 	if ((ctx->in_ep == NULL) || (ctx->out_ep == NULL) ||
 	    (ctx->status_ep == NULL))
-		goto error;
+		goto error2;
 
 	dev->net->ethtool_ops = &cdc_ncm_ethtool_ops;
 
@@ -617,7 +615,7 @@ advance:
 
 	temp = usbnet_get_ethernet_addr(dev, ctx->ether_desc->iMACAddress);
 	if (temp)
-		goto error;
+		goto error2;
 
 	dev_info(&dev->udev->dev, "MAC-Address: "
 				"0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x\n",
@@ -630,7 +628,10 @@ advance:
 	dev->out = usb_sndbulkpipe(dev->udev,
 		ctx->out_ep->desc.bEndpointAddress & USB_ENDPOINT_NUMBER_MASK);
 	dev->status = ctx->status_ep;
-	dev->rx_urb_size = ctx->rx_max;
+	/* dev->rx_urb_size = ctx->rx_max; */
+	/* Start with one bulk transfer just to check that we are in sync */
+	ctx->packet_cnt = 0;
+	cdc_ncm_set_urb_size(dev, 512);
 
 	/*
 	 * We should get an event when network connection is "connected" or
@@ -638,42 +639,53 @@ advance:
 	 * (carrier is OFF) during attach, so the IP network stack does not
 	 * start IPv6 negotiation and more.
 	 */
+	usb_enable_autosuspend(dev->udev);
+	if (device_can_wakeup(&dev->udev->dev))
+		device_init_wakeup(&dev->udev->dev, 1);
+
+	dev_info(&dev->udev->dev, "wakeup: %s\n", device_can_wakeup(&dev->udev->dev)
+		? (device_may_wakeup(&dev->udev->dev) ? "enabled" : "disabled")
+		: "");
+
+	
+	strcpy(dev->net->name, "rmnet%d");
 	netif_carrier_off(dev->net);
 	ctx->tx_speed = ctx->rx_speed = 0;
+	dev->rx_queue_enable = 0;
 	return 0;
 
+error2:
+	usb_set_intfdata(ctx->control, NULL);
+	usb_set_intfdata(ctx->data, NULL);
+	usb_driver_release_interface(driver, ctx->data);
 error:
 	cdc_ncm_free((struct cdc_ncm_ctx *)dev->data[0]);
 	dev->data[0] = 0;
-	dev_info(&dev->udev->dev, "Descriptor failure\n");
+	dev_info(&dev->udev->dev, "bind() failure\n");
 	return -ENODEV;
 }
 
 static void cdc_ncm_unbind(struct usbnet *dev, struct usb_interface *intf)
 {
 	struct cdc_ncm_ctx *ctx = (struct cdc_ncm_ctx *)dev->data[0];
-	struct usb_driver *driver;
+	struct usb_driver *driver = driver_of(intf);
 
 	if (ctx == NULL)
 		return;		/* no setup */
 
-	driver = driver_of(intf);
-
-	usb_set_intfdata(ctx->data, NULL);
-	usb_set_intfdata(ctx->control, NULL);
-	usb_set_intfdata(ctx->intf, NULL);
-
-	/* release interfaces, if any */
-	if (ctx->data_claimed) {
+	/* disconnect master --> disconnect slave */
+	if (intf == ctx->control && ctx->data) {
+		usb_set_intfdata(ctx->data, NULL);
 		usb_driver_release_interface(driver, ctx->data);
-		ctx->data_claimed = 0;
-	}
+		ctx->data = NULL;
 
-	if (ctx->control_claimed) {
+	} else if (intf == ctx->data && ctx->control) {
+		usb_set_intfdata(ctx->control, NULL);
 		usb_driver_release_interface(driver, ctx->control);
-		ctx->control_claimed = 0;
+		ctx->control = NULL;
 	}
 
+	usb_set_intfdata(ctx->intf, NULL);
 	cdc_ncm_free(ctx);
 }
 
@@ -722,7 +734,7 @@ cdc_ncm_fill_tx_frame(struct cdc_ncm_ctx *ctx, struct sk_buff *skb)
 
 	} else {
 		/* reset variables */
-		skb_out = alloc_skb(ctx->tx_max, GFP_ATOMIC);
+		skb_out = alloc_skb((ctx->tx_max + 1), GFP_ATOMIC);
 		if (skb_out == NULL) {
 			if (skb != NULL) {
 				dev_kfree_skb_any(skb);
@@ -861,8 +873,11 @@ cdc_ncm_fill_tx_frame(struct cdc_ncm_ctx *ctx, struct sk_buff *skb)
 	/* store last offset */
 	last_offset = offset;
 
-	if ((last_offset < ctx->tx_max) && ((last_offset %
-			le16_to_cpu(ctx->out_ep->desc.wMaxPacketSize)) == 0)) {
+	if (((last_offset < ctx->tx_max) && ((last_offset %
+			le16_to_cpu(ctx->out_ep->desc.wMaxPacketSize)) == 0)) ||
+	    (((last_offset == ctx->tx_max) && ((ctx->tx_max %
+		le16_to_cpu(ctx->out_ep->desc.wMaxPacketSize)) == 0)) &&
+		(ctx->tx_max < le32_to_cpu(ctx->ncm_parm.dwNtbOutMaxSize)))) {
 		/* force short packet */
 		*(((u8 *)skb_out->data) + last_offset) = 0;
 		last_offset++;
@@ -1017,11 +1032,26 @@ static int cdc_ncm_rx_fixup(struct usbnet *dev, struct sk_buff *skb_in)
 
 	if (le32_to_cpu(ctx->rx_ncm.nth16.dwSignature) !=
 	    USB_CDC_NCM_NTH16_SIGN) {
-		pr_debug("invalid NTH16 signature <%u>\n",
-			 le32_to_cpu(ctx->rx_ncm.nth16.dwSignature));
+		ctx->packet_cnt++;;
+		pr_debug("invalid NTH16 signature <%u>, packet_cnt = %d\n",
+			 le32_to_cpu(ctx->rx_ncm.nth16.dwSignature), ctx->packet_cnt);
+
+		if (actlen == ctx->rx_max) {
+		  cdc_ncm_set_urb_size(dev, CDC_NCM_MIN_TX_PKT);
+		} else if (ctx->packet_cnt == 15) {
+			printk("next pkt should be on 8k boundery. Restart the rx queue with 8k urb\n");
+			cdc_ncm_set_urb_size(dev, ctx->rx_max);
+		}
 		goto error;
 	}
 
+	//printk("New pkt, skb len =  %d, pkt_cnt = %d\n", actlen, ctx->packet_cnt);
+	if (actlen == CDC_NCM_MIN_TX_PKT && ctx->packet_cnt != 0) {
+	  	printk("pkt not on boundery\n");
+	}
+	
+	ctx->packet_cnt = 0;
+	
 	temp = le16_to_cpu(ctx->rx_ncm.nth16.wBlockLength);
 	if (temp > sumlen) {
 		pr_debug("unsupported NTB block length %u/%u\n", temp, sumlen);
@@ -1103,6 +1133,7 @@ static int cdc_ncm_rx_fixup(struct usbnet *dev, struct sk_buff *skb_in)
 			if (!skb)
 				goto error;
 			skb->len = temp;
+            skb->truesize = temp + sizeof(struct sk_buff);
 			skb->data = ((u8 *)skb_in->data) + offset;
 			skb_set_tail_pointer(skb, temp);
 			usbnet_skb_return(dev, skb);
@@ -1183,6 +1214,8 @@ static void cdc_ncm_status(struct usbnet *dev, struct urb *urb)
 		else {
 			netif_carrier_off(dev->net);
 			ctx->tx_speed = ctx->rx_speed = 0;
+			ctx->packet_cnt = 0;
+			cdc_ncm_set_urb_size(dev, CDC_NCM_MIN_TX_PKT);
 		}
 		break;
 
