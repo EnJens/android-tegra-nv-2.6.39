@@ -362,6 +362,8 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"AuxI Mix", NULL,				"Right AuxI"},
 	{"AUXOUTL", NULL,				"Left AuxOut"},
 	{"AUXOUTR", NULL,				"Right AuxOut"},
+	{"HPOut Mix", NULL,				"HPL Mix"},
+	{"HPOut Mix", NULL,				"HPR Mix"},
 
 	/* HP mixer */
 	{"HPL Mix", "ADC2HP_L Playback Switch",		"Left Capture Mix"},
@@ -612,7 +614,6 @@ static const struct _coeff_div coeff_div[] = {
 
 static int get_coeff(struct snd_soc_codec *codec, int rate)
 {
-        pr_info("%s++ rate=%d", __func__, rate);
 	struct alc5623_priv *alc5623 = snd_soc_codec_get_drvdata(codec);
 	int i;
 
@@ -620,7 +621,6 @@ static int get_coeff(struct snd_soc_codec *codec, int rate)
 		if (coeff_div[i].fs * rate == alc5623->sysclk)
 			return i;
 	}
-        pr_info("%s sysclk=%d", __func__, alc5623->sysclk);
 	return -EINVAL;
 }
 
@@ -694,12 +694,13 @@ static int alc5623_set_dai_fmt(struct snd_soc_dai *codec_dai,
 	case SND_SOC_DAIFMT_NB_NF:
 		break;
 	case SND_SOC_DAIFMT_IB_IF:
-		iface |= ALC5623_DAI_MAIN_I2S_BCLK_POL_CTRL;
+		iface |= ALC5623_DAI_MAIN_I2S_BCLK_POL_CTRL | ALC5623_DAI_DAC_DATA_L_R_SWAP;
 		break;
 	case SND_SOC_DAIFMT_IB_NF:
 		iface |= ALC5623_DAI_MAIN_I2S_BCLK_POL_CTRL;
 		break;
 	case SND_SOC_DAIFMT_NB_IF:
+		iface |= ALC5623_DAI_DAC_DATA_L_R_SWAP;
 		break;
 	default:
 		return -EINVAL;
