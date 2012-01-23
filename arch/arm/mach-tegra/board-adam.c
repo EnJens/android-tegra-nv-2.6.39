@@ -247,14 +247,10 @@ static void adam_usb_init(void)
 	platform_device_register(&tegra_otg_device);
 
 	platform_device_register(&tegra_udc_device);
-//	tegra_ehci2_device.dev.platform_data = &adam_ehci2_ulpi_platform_data;
-	tegra_ehci1_device.dev.platform_data = &tegra_ehci_pdata[0];
-	platform_device_register(&tegra_ehci1_device);
+//	platform_device_register(&tegra_ehci1_device);
 
 	tegra_ehci3_device.dev.platform_data = &tegra_ehci_pdata[2];
 	platform_device_register(&tegra_ehci3_device);
-
-	tegra_otg_set_host_mode(true);
 
 }
 
