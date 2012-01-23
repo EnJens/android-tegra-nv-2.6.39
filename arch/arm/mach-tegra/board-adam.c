@@ -155,23 +155,6 @@ static struct tegra_utmip_config utmi_phy_config[] = {
 	},
 };
 
-static struct tegra_utmip_config udc_phy_config = {
-	.hssync_start_delay = 9,
-	.idle_wait_delay = 17,
-	.elastic_limit = 16,
-	.term_range_adj = 6,
-	.xcvr_setup = 15,
-	.xcvr_lsfslew = 1,
-	.xcvr_lsrslew = 1,
-};
-
-static struct fsl_usb2_platform_data tegra_udc_pdata = {
-	.operating_mode	= FSL_USB2_DR_DEVICE,
-	.phy_mode	= FSL_USB2_PHY_UTMI,
-	.phy_config	= &udc_phy_config,
-};
-
-
 /* ULPI is managed by an SMSC3317 on the Harmony board */
 static struct tegra_ulpi_config ulpi_phy_config = {
 	// Is this even right?
@@ -195,7 +178,7 @@ static struct usb_phy_plat_data tegra_usb_phy_pdata[] = {
 	[0] = {
 			.instance = 0,
 			.vbus_irq = TPS6586X_INT_BASE + TPS6586X_INT_USB_DET,
-			.vbus_gpio = ADAM_USB0_VBUS,
+			//.vbus_gpio = ADAM_USB0_VBUS,
 	},
 	[1] = {
 			.instance = 1,
@@ -222,7 +205,7 @@ static struct tegra_ehci_platform_data tegra_ehci_pdata[] = {
 	[2] = {
 			.phy_config = &utmi_phy_config[1],
 			.operating_mode = TEGRA_USB_HOST,
-			.power_down_on_bus_suspend = 1,
+			.power_down_on_bus_suspend = 0,
 			.hotplug = 1,
 	},
 };
@@ -255,18 +238,24 @@ static struct tegra_suspend_platform_data adam_suspend = {
 
 static void adam_usb_init(void)
 {
-	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
+//	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
 	/* OTG should be the first to be registered */
-	//tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
-	//platform_device_register(&tegra_otg_device);
+	gpio_request(ADAM_USB0_VBUS, "USB0 VBUS");
+	gpio_direction_output(ADAM_USB0_VBUS, 0 );
 
-	tegra_udc_device.dev.platform_data = &tegra_udc_pdata;
+	tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
+	platform_device_register(&tegra_otg_device);
+
 	platform_device_register(&tegra_udc_device);
-	tegra_ehci2_device.dev.platform_data = &adam_ehci2_ulpi_platform_data;
-	platform_device_register(&tegra_ehci2_device);
+//	tegra_ehci2_device.dev.platform_data = &adam_ehci2_ulpi_platform_data;
+	tegra_ehci1_device.dev.platform_data = &tegra_ehci_pdata[0];
+	platform_device_register(&tegra_ehci1_device);
 
 	tegra_ehci3_device.dev.platform_data = &tegra_ehci_pdata[2];
 	platform_device_register(&tegra_ehci3_device);
+
+	tegra_otg_set_host_mode(true);
+
 }
 
 
@@ -310,7 +299,7 @@ static void __init tegra_adam_init(void)
 	
 	/* Register the USB device */
 	//adam_usb_register_devices();
-	//adam_usb_init();
+	adam_usb_init();
 
 	/* Register UART devices */
 	adam_uart_register_devices();
