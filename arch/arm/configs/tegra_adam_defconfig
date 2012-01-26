@@ -2470,7 +2470,7 @@ CONFIG_RTC_DRV_TPS6586X=y
 #
 # on-CPU RTC drivers
 #
-CONFIG_RTC_DRV_TEGRA=y
+# CONFIG_RTC_DRV_TEGRA is not set
 # CONFIG_DMADEVICES is not set
 # CONFIG_AUXDISPLAY is not set
 # CONFIG_UIO is not set
