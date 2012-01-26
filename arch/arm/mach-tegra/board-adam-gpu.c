@@ -167,7 +167,7 @@ static int adam_hdmi_disable(void)
 /* If using 1024x600 panel (Shuttle default panel) */
 
 /* Frame buffer size assuming 16bpp color */
-#define ADAM_FB_SIZE TEGRA_ROUND_ALLOC(1024*600*(16/8)*ADAM_FB_PAGES)
+#define ADAM_FB_SIZE TEGRA_ROUND_ALLOC(1024*600*(32/8)*ADAM_FB_PAGES)
 
 static struct tegra_dc_mode adam_panel_modes[] = {
 	{
@@ -189,7 +189,7 @@ static struct tegra_fb_data adam_fb_data = {
 	.win		= 0,
 	.xres		= 1024,
 	.yres		= 600,
-	.bits_per_pixel	= 16,
+	.bits_per_pixel	= 32,
 };
 
 #if defined(ADAM_1920x1080HDMI)
