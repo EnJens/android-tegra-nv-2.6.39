@@ -39,6 +39,38 @@
 #include "devices.h"
 #include "gpio-names.h"
 #include "board-adam.h"
+static bool pqiOn = 0;
+
+static void updatePqiGpio(bool on) {
+	if (on && !pqiOn)
+		gpio_set_value(ADAM_BL_ENB, 1);
+	if (!on || pqiOn) 
+		gpio_set_value(ADAM_BL_ENB, 0);
+}
+
+static ssize_t store_pqistatus(struct device *dev, struct device_attribute *attr,
+                         	const char *buf, size_t count)
+{
+	int scnCount = 0;
+	int scanned = 0;
+	scnCount = sscanf(buf, "%d\n", &scanned);
+	if (scnCount == 1) {
+		pqiOn = !!scanned;
+		// Pass the opposite to enable the backlight
+		// when PQi mode disabled. Won't matter if it's PQimode is enabled.
+		updatePqiGpio(!scanned);
+	}
+        return count;
+}
+
+static ssize_t show_pqistatus(struct device *dev, struct device_attribute *attr,
+                        	char *buf)
+{        
+        return scnprintf(buf, PAGE_SIZE, "%d\n", pqiOn);
+}
+
+static DEVICE_ATTR(PQiModeOn, 0666, show_pqistatus, store_pqistatus);
+
 
 static int adam_backlight_init(struct device *dev)
 {
@@ -52,12 +84,10 @@ static int adam_backlight_init(struct device *dev)
 	if (ret < 0)
 		gpio_free(ADAM_BL_ENB);
 
-	// PQI on/off at /sys/bus/gpio/gpio27
-	ret = gpio_export(ADAM_BL_ENB, 0);
-	if(ret < 0)
-		gpio_free(ADAM_BL_ENB);
-
 	gpio_sysfs_set_active_low(ADAM_BL_ENB, 1);
+
+	if (!device_create_file(dev, &dev_attr_PQiModeOn))
+		pr_err("%s: Failed to create Pqi control!", __func__);
 	return ret;
 };
 
@@ -71,7 +101,7 @@ static int adam_backlight_notify(struct device *unused, int brightness)
 {
 	gpio_set_value(ADAM_EN_VDD_PANEL, !!brightness);	
 	gpio_set_value(ADAM_LVDS_SHUTDOWN, !!brightness);
-	gpio_set_value(ADAM_BL_ENB, !!brightness);
+	updatePqiGpio(!!brightness);
 	return brightness;
 }
 
