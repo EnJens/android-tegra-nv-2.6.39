@@ -129,15 +129,9 @@ static int adam_wifi_power(int on)
 {
         pr_debug("%s: %d\n", __func__, on);
 
-        gpio_set_value(ADAM_WLAN_POWER, on);
-        mdelay(100);
+	adam_bt_wifi_gpio_set(on);
         gpio_set_value(ADAM_WLAN_RESET, on);
         mdelay(200);
-
-        if (on)
-                clk_enable(wifi_32k_clk);
-        else
-                clk_disable(wifi_32k_clk);
 
         return 0;
 }
@@ -182,17 +176,11 @@ static struct platform_device *adam_sdhci_devices[] __initdata = {
 
 static int __init adam_wifi_init(void)
 {
-        wifi_32k_clk = clk_get_sys(NULL, "blink");
-        if (IS_ERR(wifi_32k_clk)) {
-                pr_err("%s: unable to get blink clock\n", __func__);
-                return PTR_ERR(wifi_32k_clk);
-        }
-        tegra_gpio_enable(ADAM_WLAN_POWER);
+	// Init the power GPIO if it isn't already
+	adam_bt_wifi_gpio_init();
         tegra_gpio_enable(ADAM_WLAN_RESET);
 
-	gpio_request(ADAM_WLAN_POWER, "wifi_power");
 	gpio_request(ADAM_WLAN_RESET, "wifi_reset");
-        gpio_direction_output(ADAM_WLAN_POWER, 0);
         gpio_direction_output(ADAM_WLAN_RESET, 0);
 
         platform_device_register(&adam_wifi_device);

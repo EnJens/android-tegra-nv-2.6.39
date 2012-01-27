@@ -33,6 +33,10 @@
 #include <linux/slab.h>
 #include <linux/delay.h>
 
+#ifdef CONFIG_MACH_ADAM
+#include "../../arch/arm/mach-tegra/board-adam.h"
+#endif
+
 struct bcm4329_rfkill_data {
 	int gpio_reset;
 	int gpio_shutdown;
@@ -48,15 +52,24 @@ static int bcm4329_bt_rfkill_set_power(void *data, bool blocked)
 	if (blocked) {
 		if (!bcm4329_rfkill->state)
 			return 0;
+#ifdef CONFIG_MACH_ADAM
+		adam_bt_wifi_gpio_set(0);
+#else
 		if (bcm4329_rfkill->gpio_shutdown)
 			gpio_direction_output(bcm4329_rfkill->gpio_shutdown, 0);
-		if (bcm4329_rfkill->gpio_reset)
-			gpio_direction_output(bcm4329_rfkill->gpio_reset, 0);
 		if (bcm4329_rfkill->bt_32k_clk)
 			clk_disable(bcm4329_rfkill->bt_32k_clk);
+#endif
+		if (bcm4329_rfkill->gpio_reset)
+			gpio_direction_output(bcm4329_rfkill->gpio_reset, 0);
+		bcm4329_rfkill->state = 0;
+
 	} else {
 		if (bcm4329_rfkill->state)
 			return 0;
+#ifdef CONFIG_MACH_ADAM
+		adam_bt_wifi_gpio_set(1);
+#else
 		if (bcm4329_rfkill->bt_32k_clk)
 			clk_enable(bcm4329_rfkill->bt_32k_clk);
 		if (bcm4329_rfkill->gpio_shutdown)
@@ -66,6 +79,7 @@ static int bcm4329_bt_rfkill_set_power(void *data, bool blocked)
 			gpio_direction_output(bcm4329_rfkill->gpio_shutdown, 1);
 			msleep(100);
 		}
+#endif
 		if (bcm4329_rfkill->gpio_reset)
 		{
 			gpio_direction_output(bcm4329_rfkill->gpio_reset, 0);
@@ -73,6 +87,8 @@ static int bcm4329_bt_rfkill_set_power(void *data, bool blocked)
 			gpio_direction_output(bcm4329_rfkill->gpio_reset, 1);
 			msleep(100);
 		}
+		bcm4329_rfkill->state = 1;
+
 	}
 
 	return 0;
@@ -96,12 +112,17 @@ static int bcm4329_rfkill_probe(struct platform_device *pdev)
 	
 	bcm4329_rfkill->state = 0;
 
+#ifdef CONFIG_MACH_ADAM
+	// Init the gpio manager if it isn't already.
+	adam_bt_wifi_gpio_init();
+#else
 	bcm4329_rfkill->bt_32k_clk = clk_get(&pdev->dev, "bcm4329_32k_clk");
 	if (IS_ERR(bcm4329_rfkill->bt_32k_clk)) {
 		pr_warn("%s: can't find bcm4329_32k_clk.\
 				assuming 32k clock to chip\n", __func__);
 		bcm4329_rfkill->bt_32k_clk = NULL;
 	}
+#endif
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_IO,
 						"bcm4329_nreset_gpio");

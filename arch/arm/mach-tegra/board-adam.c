@@ -93,6 +93,43 @@ static int __init parse_tag_nvidia(const struct tag *tag)
 }
 __tagtable(ATAG_NVIDIA, parse_tag_nvidia);
 
+
+
+
+static unsigned long ramconsole_start = SZ_512M*2 - SZ_2M;
+static unsigned long ramconsole_size = SZ_1M;
+
+static struct resource ram_console_resources[] = {
+	{
+		/* .start and .end filled in later */
+		.flags  = IORESOURCE_MEM,
+	},
+};
+
+//static struct ram_console_platform_data ram_console_pdata;
+
+static struct platform_device ram_console_device = {
+	.name           = "ram_console",
+	.id             = -1,
+	.num_resources  = ARRAY_SIZE(ram_console_resources),
+	.resource       = ram_console_resources,
+	//.dev    = {
+	//	.platform_data = &ram_console_pdata,
+	//},
+};
+
+static int __init stingray_ramconsole_arg(char *options)
+{
+	char *p = options;
+
+	ramconsole_size = memparse(p, &p);
+	if (*p == '@')
+		ramconsole_start = memparse(p+1, &p);
+
+	return 0;
+}
+early_param("ramconsole", stingray_ramconsole_arg);
+
 static atomic_t adam_gps_mag_powered = ATOMIC_INIT(0);
 void adam_gps_mag_poweron(void)
 {
@@ -131,6 +168,56 @@ void adam_gps_mag_deinit(void)
 	atomic_dec(&adam_gps_mag_inited);
 }
 EXPORT_SYMBOL_GPL(adam_gps_mag_deinit);
+
+static struct clk *wifi_32k_clk;
+int adam_bt_wifi_gpio_init(void)
+{
+	static bool inited = 0;
+	// Check to see if we've already been init'ed.
+	if (inited) 
+		return 0;
+	wifi_32k_clk = clk_get_sys(NULL, "blink");
+        if (IS_ERR(wifi_32k_clk)) {
+                pr_err("%s: unable to get blink clock\n", __func__);
+                return -1;
+        }
+	gpio_request(ADAM_WLAN_POWER, "bt_wifi_power");
+        tegra_gpio_enable(ADAM_WLAN_POWER);
+	gpio_direction_output(ADAM_WLAN_POWER, 0);
+	inited = 1;
+	return 0;	
+}
+EXPORT_SYMBOL_GPL(adam_bt_wifi_gpio_init);
+
+int adam_bt_wifi_gpio_set(bool on)
+{
+       static int count = 0;
+	if (IS_ERR(wifi_32k_clk)) {
+		pr_err("%s: Clock wasn't obtained\n", __func__);
+		return -1;
+	}
+				
+	if (on) {
+		if (count == 0) {
+			gpio_set_value(ADAM_WLAN_POWER, 1);
+        		mdelay(100);
+			clk_enable(wifi_32k_clk);
+		}
+		count++;
+	} else {
+		if (count == 0) {
+			pr_err("%s: Unbalanced wifi/bt power disable requests\n", __func__);
+			return -1;
+		} else if (count == 1) {
+			        gpio_set_value(ADAM_WLAN_POWER, 0);
+        			mdelay(100);
+				clk_disable(wifi_32k_clk);
+		} 
+		--count;
+	}
+	return 0;		
+}
+EXPORT_SYMBOL_GPL(adam_bt_wifi_gpio_set);
 
 static struct tegra_utmip_config utmi_phy_config[] = {
 	[0] = {
@@ -258,6 +345,7 @@ static void adam_usb_init(void)
 static void __init tegra_adam_init(void)
 {
 	struct clk *clk;
+	struct resource *res;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)	
 	tegra_common_init();
@@ -279,6 +367,12 @@ static void __init tegra_adam_init(void)
 		pr_err("Failed to set wifi sdmmc tap delay\n");
 	}
 
+	res = platform_get_resource(&ram_console_device, IORESOURCE_MEM, 0);
+	res->start = ramconsole_start;
+	res->end = ramconsole_start + ramconsole_size - 1;
+
+	//platform_device_register(&ram_console_device);
+
 	/* Initialize the pinmux */
 	adam_pinmux_init();
 
@@ -287,8 +381,6 @@ static void __init tegra_adam_init(void)
 
 	/* Register i2c devices - required for Power management and MUST be done before the power register */
 	adam_i2c_register_devices();
-
-	
 
 	/* Register the power subsystem - Including the poweroff handler - Required by all the others */
 	adam_power_register_devices();
@@ -362,8 +454,16 @@ static void __init tegra_adam_init(void)
 
 static void __init tegra_adam_reserve(void)
 {
+	long ret = 0;
 	if (memblock_reserve(0x0, 4096) < 0)
 		pr_warn("Cannot reserve first 4K of memory for safety\n");
+
+	ret = memblock_remove(SZ_512M*2 - SZ_2M, SZ_2M);
+	if (ret)
+		pr_info("Failed to remove ram console\n");
+	else
+		pr_info("Reserved %08lx@%08lx for ram console\n",
+			ramconsole_start, ramconsole_size);
 
 #if defined(DYNAMIC_GPU_MEM)
 	/* Reserve the graphics memory */

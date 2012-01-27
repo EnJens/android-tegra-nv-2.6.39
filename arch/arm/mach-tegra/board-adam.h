@@ -55,7 +55,7 @@
 #define ADAM_MEM_SIZE 		SZ_512M			/* Total memory */
 #define ADAM_MEM_BANKS		2
 
-#define ADAM_GPU_MEM_SIZE 		SZ_128M		/* Memory reserved for GPU */
+#define ADAM_GPU_MEM_SIZE 		SZ_256M		/* Memory reserved for GPU */
 //#define ADAM_GPU_MEM_SIZE 	SZ_64M			/* Memory reserved for GPU */
 
 #define ADAM_FB1_MEM_SIZE 	SZ_8M			/* Memory reserved for Framebuffer 1: LCD */
@@ -123,6 +123,8 @@
 extern void adam_gps_mag_poweron(void);
 extern void adam_gps_mag_poweroff(void);
 extern void adam_gps_mag_init(void);
+extern int adam_bt_wifi_gpio_set(bool on);
+extern int adam_bt_wifi_gpio_init(void);
 
 extern void adam_wifi_set_cd(int val);
 
