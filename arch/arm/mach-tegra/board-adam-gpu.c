@@ -86,7 +86,7 @@ static int adam_backlight_init(struct device *dev)
 
 	gpio_sysfs_set_active_low(ADAM_BL_ENB, 1);
 
-	if (!device_create_file(dev, &dev_attr_PQiModeOn))
+	if (device_create_file(dev, &dev_attr_PQiModeOn))
 		pr_err("%s: Failed to create Pqi control!", __func__);
 	return ret;
 };
