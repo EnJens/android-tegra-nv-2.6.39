@@ -38,6 +38,9 @@
 #include <asm/mach/time.h>
 #include <asm/setup.h>
 #include <linux/mfd/tps6586x.h>
+#include "fuse.h"
+
+
 
 #include <mach/io.h>
 #include <mach/w1.h>
@@ -69,30 +72,99 @@
 #include "wakeups-t2.h"
 
 
-/* NVidia bootloader tags */
-#define ATAG_NVIDIA		0x41000801
+#define PMC_CTRL                0x0
+#define PMC_CTRL_INTR_LOW       (1 << 17)
 
-#define ATAG_NVIDIA_RM			0x1
-#define ATAG_NVIDIA_DISPLAY		0x2
-#define ATAG_NVIDIA_FRAMEBUFFER		0x3
-#define ATAG_NVIDIA_CHIPSHMOO		0x4
-#define ATAG_NVIDIA_CHIPSHMOOPHYS	0x5
-#define ATAG_NVIDIA_PRESERVED_MEM_0	0x10000
-#define ATAG_NVIDIA_PRESERVED_MEM_N	2
-#define ATAG_NVIDIA_FORCE_32		0x7fffffff
+/* NVidia bootloader tags */
+#define ATAG_NVIDIA			0x41000801
+#define MAX_MEMHDL			8
 
 struct tag_tegra {
-	__u32 bootarg_key;
-	__u32 bootarg_len;
-	char bootarg[1];
+        __u32 bootarg_len;
+        __u32 bootarg_key;
+        __u32 bootarg_nvkey;
+        __u32 bootarg[];
+};
+
+struct memhdl {
+        __u32 id;
+        __u32 start;
+        __u32 size;
+};
+
+enum {
+        RM = 1,
+        DISPLAY,
+        FRAMEBUFFER,
+        CHIPSHMOO,
+        CHIPSHMOO_PHYS,
+        CARVEOUT,
+        WARMBOOT,
+};
+
+static int num_memhdl = 0;
+
+static struct memhdl nv_memhdl[MAX_MEMHDL];
+
+static const char atag_ids[][16] = {
+        "RM             ",
+        "DISPLAY        ",
+        "FRAMEBUFFER    ",
+        "CHIPSHMOO      ",
+        "CHIPSHMOO_PHYS ",
+        "CARVEOUT       ",
+        "WARMBOOT       ",
 };
 
 static int __init parse_tag_nvidia(const struct tag *tag)
 {
-	return 0;
+        int i;
+        struct tag_tegra *nvtag = (struct tag_tegra *)tag;
+        __u32 id;
+
+        switch (nvtag->bootarg_nvkey) {
+        case FRAMEBUFFER:
+                id = nvtag->bootarg[1];
+                for (i=0; i<num_memhdl; i++)
+             		if (nv_memhdl[i].id == id) {
+	    	 		tegra_bootloader_fb_start = nv_memhdl[i].start;
+		        	tegra_bootloader_fb_size = nv_memhdl[i].size;
+
+     		 	}
+                break;
+        case WARMBOOT:
+                id = nvtag->bootarg[1];
+                for (i=0; i<num_memhdl; i++) {
+                        if (nv_memhdl[i].id == id) {
+                                tegra_lp0_vec_start = nv_memhdl[i].start;
+                                tegra_lp0_vec_size = nv_memhdl[i].size;
+                        }
+                }
+                break;
+        }
+
+        if (nvtag->bootarg_nvkey & 0x10000) {
+                char pmh[] = " PreMemHdl     ";
+                id = nvtag->bootarg_nvkey;
+                if (num_memhdl < MAX_MEMHDL) {
+                        nv_memhdl[num_memhdl].id = id;
+                        nv_memhdl[num_memhdl].start = nvtag->bootarg[1];
+                        nv_memhdl[num_memhdl].size = nvtag->bootarg[2];
+                        num_memhdl++;
+                }
+                pmh[11] = '0' + id;
+                print_hex_dump(KERN_INFO, pmh, DUMP_PREFIX_NONE,
+                                32, 4, &nvtag->bootarg[0], 4*(tag->hdr.size-2), false);
+        }
+        else if (nvtag->bootarg_nvkey <= ARRAY_SIZE(atag_ids))
+                print_hex_dump(KERN_INFO, atag_ids[nvtag->bootarg_nvkey-1], DUMP_PREFIX_NONE,
+                                32, 4, &nvtag->bootarg[0], 4*(tag->hdr.size-2), false);
+        else
+                pr_warning("unknown ATAG key %d\n", nvtag->bootarg_nvkey);
+
+        return 0;
 }
 __tagtable(ATAG_NVIDIA, parse_tag_nvidia);
-
 
 
 
@@ -264,8 +336,8 @@ static struct tegra_ehci_platform_data adam_ehci2_ulpi_platform_data = {
 static struct usb_phy_plat_data tegra_usb_phy_pdata[] = {
 	[0] = {
 			.instance = 0,
-			.vbus_irq = TPS6586X_INT_BASE + TPS6586X_INT_USB_DET,
-			//.vbus_gpio = ADAM_USB0_VBUS,
+			//.vbus_irq = TPS6586X_INT_BASE + TPS6586X_INT_USB_DET,
+			.vbus_gpio = ADAM_USB0_VBUS,
 	},
 	[1] = {
 			.instance = 1,
@@ -292,8 +364,7 @@ static struct tegra_ehci_platform_data tegra_ehci_pdata[] = {
 	[2] = {
 			.phy_config = &utmi_phy_config[1],
 			.operating_mode = TEGRA_USB_HOST,
-			.power_down_on_bus_suspend = 0,
-			.hotplug = 1,
+			.power_down_on_bus_suspend = 1,
 	},
 };
 
@@ -302,14 +373,30 @@ static struct tegra_otg_platform_data tegra_otg_pdata = {
 	.ehci_pdata = &tegra_ehci_pdata[0],
 };
 
+static void adam_board_suspend(int lp_state, enum suspend_stage stg)
+{
+        if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_SUSPEND_BEFORE_CPU))
+                tegra_console_uart_suspend();
+}
+
+static void adam_board_resume(int lp_state, enum resume_stage stg)
+{
+        if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_RESUME_AFTER_CPU))
+                tegra_console_uart_resume();
+}
+
+
 static struct tegra_suspend_platform_data adam_suspend = {
-	.cpu_timer = 5000,
-	.cpu_off_timer = 5000,
+	.cpu_timer = 2000,
+	.cpu_off_timer = 100,
 	.core_timer = 0x7e7e,
-	.core_off_timer = 0x7f,
-    .corereq_high = false,
+	.core_off_timer = 0xf,
+        .corereq_high = false,
 	.sysclkreq_high = true,
-	.suspend_mode = TEGRA_SUSPEND_LP1,
+	.suspend_mode = TEGRA_SUSPEND_LP0,
+        .board_suspend = adam_board_suspend,
+        .board_resume = adam_board_resume,
+
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,38) /* NB: 2.6.39+ handles this automatically */
 	.separate_req = true,	
 	.wake_enb = ADAM_WAKE_KEY_POWER | 
@@ -325,10 +412,10 @@ static struct tegra_suspend_platform_data adam_suspend = {
 
 static void adam_usb_init(void)
 {
-//	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
+	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
 	/* OTG should be the first to be registered */
-	gpio_request(ADAM_USB0_VBUS, "USB0 VBUS");
-	gpio_direction_output(ADAM_USB0_VBUS, 0 );
+	//gpio_request(ADAM_USB0_VBUS, "USB0 VBUS");
+	//gpio_direction_output(ADAM_USB0_VBUS, 0 );
 
 	tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
 	platform_device_register(&tegra_otg_device);
@@ -346,6 +433,22 @@ static void __init tegra_adam_init(void)
 {
 	struct clk *clk;
 	struct resource *res;
+	       void __iomem *pmc = IO_ADDRESS(TEGRA_PMC_BASE);
+        void __iomem *chip_id = IO_ADDRESS(TEGRA_APB_MISC_BASE) + 0x804;
+        u32 pmc_ctrl;
+        u32 minor;
+
+        minor = (readl(chip_id) >> 16) & 0xf;
+        /* A03 (but not A03p) chips do not support LP0 */
+        if (minor == 3 && !(tegra_spare_fuse(18) || tegra_spare_fuse(19)))
+                adam_suspend.suspend_mode = TEGRA_SUSPEND_LP1;
+	printk("Debug: Suspend Data, %x, %d, %d", minor, !!tegra_spare_fuse(18),
+							!!tegra_spare_fuse(19));
+
+        /* configure the power management controller to trigger PMU
+         * interrupts when low */
+        pmc_ctrl = readl(pmc + PMC_CTRL);
+        writel(pmc_ctrl | PMC_CTRL_INTR_LOW, pmc + PMC_CTRL);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)	
 	tegra_common_init();
@@ -355,6 +458,7 @@ static void __init tegra_adam_init(void)
 	// console_suspend_enabled = 0;	
 
 	/* Init the suspend information */
+	
 	tegra_init_suspend(&adam_suspend);
 
 	/* Set the SDMMC1 (wifi) tap delay to 6.  This value is determined
@@ -371,7 +475,7 @@ static void __init tegra_adam_init(void)
 	res->start = ramconsole_start;
 	res->end = ramconsole_start + ramconsole_size - 1;
 
-	//platform_device_register(&ram_console_device);
+	platform_device_register(&ram_console_device);
 
 	/* Initialize the pinmux */
 	adam_pinmux_init();

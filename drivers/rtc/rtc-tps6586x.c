@@ -140,7 +140,14 @@ static int tps6586x_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 	u8 rbuff[6];
 	int err;
 	int i;
-
+	static int debug = 0;
+	
+	if (debug == 2000) {
+		dump_stack();
+		debug = 0;
+	}
+	debug++;
+	
 	if (rtc->irq == -1)
 		return -EIO;
 

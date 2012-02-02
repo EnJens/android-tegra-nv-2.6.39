@@ -25,54 +25,69 @@
 
 #include <linux/gpio.h>
 #include <asm/mach-types.h>
+#include <mach/iomap.h>
+#include <linux/io.h>
 
 #include "board-adam.h"
 #include "gpio-names.h"
+#include "wakeups-t2.h"
+#include "fuse.h"
 
+#define PMC_WAKE_STATUS 0x14
 static struct gpio_keys_button adam_keys[] = {
 	[0] = {
 		.gpio = ADAM_KEY_VOLUMEUP,
 		.active_low = true,
 		.debounce_interval = 10,
-		.wakeup = true,		
+		.wakeup = false,
 		.code = KEY_VOLUMEUP,
-		.type = EV_KEY,		
+		.type = EV_KEY,
 		.desc = "volume up",
 	},
 	[1] = {
 		.gpio = ADAM_KEY_VOLUMEDOWN,
 		.active_low = true,
 		.debounce_interval = 10,
-		.wakeup = true,		
+		.wakeup = false,
 		.code = KEY_VOLUMEDOWN,
-		.type = EV_KEY,		
+		.type = EV_KEY,
 		.desc = "volume down",
 	},
 	[2] = {
 		.gpio = ADAM_KEY_POWER,
 		.active_low = true,
 		.debounce_interval = 50,
-		.wakeup = true,		
+		.wakeup = true,
 		.code = KEY_POWER,
-		.type = EV_KEY,		
+		.type = EV_KEY,
 		.desc = "power",
 	},
 	[3] = {
 		.gpio = ADAM_KEY_BACK,
 		.active_low = true,
 		.debounce_interval = 10,
-		.wakeup = true,		
+		.wakeup = true,
 		.code = KEY_BACK,
-		.type = EV_KEY,		
+		.type = EV_KEY,
 		.desc = "back",
 	},
 };
+
+static int adam_wakeup_key(void)
+{
+        unsigned long status =
+                readl(IO_ADDRESS(TEGRA_PMC_BASE) + PMC_WAKE_STATUS);
+
+        return status & TEGRA_WAKE_GPIO_PV2 ? KEY_POWER : KEY_RESERVED;
+}
+
 
 
 static struct gpio_keys_platform_data adam_keys_platform_data = {
 	.buttons 	= adam_keys,
 	.nbuttons 	= ARRAY_SIZE(adam_keys),
 	.rep		= false, /* auto repeat enabled */
+	.wakeup_key	= adam_wakeup_key,
 };
 
 static struct platform_device adam_keys_device = {

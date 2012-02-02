@@ -1,6 +1,9 @@
 #ifndef __LIS3LV02D_H_
 #define __LIS3LV02D_H_
 
+#define majorNum 0xF0 
+#define LIS3LV02D_POWEROFF _IO(majorNum, 0)
+#define LIS3LV02D_POWERON _IO(majorNum, 1) 
 /**
  * struct lis3lv02d_platform_data - lis3 chip family platform data
  * @click_flags:	Click detection unit configuration
