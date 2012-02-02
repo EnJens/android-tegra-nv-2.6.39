@@ -96,6 +96,11 @@ static __initdata struct tegra_clk_init_table adam_clk_init_table[] = {
         { "spdif_in", "pll_p", 36000000, true},
         { "spdif_out", "pll_a_out0", 5644800, true},
 	{ "cdev1", NULL, 0, true},
+	{ "uarta",    "pll_p",    216000000,  false},    /* tegra_uart.0 uart.0 */
+	{ "uartb",    "pll_p",    216000000,  false},    /* tegra_uart.1 uart.1 */
+	{ "uartc",    "pll_p",    216000000,  false},    /* tegra_uart.2 uart.2 */
+	{ "uartd",    "pll_p",    216000000,  false},    /* tegra_uart.3 uart.3 */
+	{ "uarte",    "pll_p",    216000000,  false},    /* tegra_uart.4 uart.4 */
 	{  NULL,			NULL,			0,		0},
 };
 
