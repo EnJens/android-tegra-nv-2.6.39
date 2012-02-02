@@ -192,12 +192,8 @@ static int lis3lv02d_i2c_suspend(struct device *dev)
 	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
 	struct lis3lv02d *lis3 = i2c_get_clientdata(client);
 
-	if (!lis3->pdata || !lis3->pdata->wakeup_flags) {
-		printk("Suspending Accel");
+	if (!lis3->pdata || !lis3->pdata->wakeup_flags)
 		lis3lv02d_poweroff(lis3);
-	} else {
-		printk("Not suspending Accel");
-	}
 	return 0;
 }
 

@@ -593,23 +593,6 @@ static int lis3lv02d_misc_fasync(int fd, struct file *file, int on)
 	return fasync_helper(fd, file, on, &lis3_dev.async_queue);
 }
 
-long lis3lv02d_misc_ioctl (struct file *filp, unsigned int cmd, 
-                            unsigned long arg) {
-
-	switch (cmd) {
-		case LIS3LV02D_POWEROFF:
-			lis3lv02d_poweroff(&lis3_dev);
-			break;
-		case LIS3LV02D_POWERON:
-			lis3lv02d_poweron(&lis3_dev);
-			break;
-		default:
-			break;
-	}
-
-return 0;
-}
-
 static const struct file_operations lis3lv02d_misc_fops = {
 	.owner   = THIS_MODULE,
 	.llseek  = no_llseek,
@@ -618,7 +601,6 @@ static const struct file_operations lis3lv02d_misc_fops = {
 	.release = lis3lv02d_misc_release,
 	.poll    = lis3lv02d_misc_poll,
 	.fasync  = lis3lv02d_misc_fasync,
-	.unlocked_ioctl = lis3lv02d_misc_ioctl,
 };
 
 static struct miscdevice lis3lv02d_misc_device = {
@@ -894,8 +876,6 @@ int lis3lv02d_init_device(struct lis3lv02d *dev)
 	int irq_flags = 0;
 
 	dev->whoami = lis3lv02d_read_8(dev, WHO_AM_I);
-
-	printk("DEBUG: Using IOCTL %d for poweron and %d for poweroff", LIS3LV02D_POWERON, LIS3LV02D_POWEROFF);
 
 	switch (dev->whoami) {
 	case WAI_12B:

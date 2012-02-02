@@ -625,13 +625,11 @@ static void dpm_drv_timeout(unsigned long data)
 static void dpm_resume(pm_message_t state)
 {
 	struct device *dev;
-	printk("dpm_resume, entering\n");
 	ktime_t starttime = ktime_get();
 
 	mutex_lock(&dpm_list_mtx);
 	pm_transition = state;
 	async_error = 0;
-	printk("dpm_resume, before list\n");
 
 	list_for_each_entry(dev, &dpm_suspended_list, power.entry) {
 		INIT_COMPLETION(dev->power.completion);
@@ -640,7 +638,6 @@ static void dpm_resume(pm_message_t state)
 			async_schedule(async_resume, dev);
 		}
 	}
-	printk("dpm_resume, entering while loop\n");
 
 	while (!list_empty(&dpm_suspended_list)) {
 		dev = to_device(dpm_suspended_list.next);

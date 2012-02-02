@@ -583,8 +583,7 @@ static int gpio_keys_suspend(struct device *dev)
 			struct gpio_keys_button *button = &pdata->buttons[i];
 			if (button->wakeup) {
 				int irq = gpio_to_irq(button->gpio);
-				printk("%s, DEBUG: Enabling IRQ wake for GPIO: %d, IRQ: %d, Result = %d", __func__, button->gpio, irq, enable_irq_wake(irq));
-//				enable_irq_wake(irq);
+				enable_irq_wake(irq);
 			}
 		}
 	}

@@ -68,7 +68,7 @@ static inline unsigned int time_to_bin(unsigned int time)
 {
 	return fls(time);
 }
-static s64 tegra_cpu1_wake_by_time = LLONG_MAX;
+
 #ifdef CONFIG_SMP
 
 #define CLK_RST_CONTROLLER_CLK_CPU_CMPLX	0x4C
@@ -76,7 +76,7 @@ static s64 tegra_cpu1_wake_by_time = LLONG_MAX;
 
 static void __iomem *clk_rst = IO_ADDRESS(TEGRA_CLK_RESET_BASE);
 static void __iomem *pmc = IO_ADDRESS(TEGRA_PMC_BASE);
-// static s64 tegra_cpu1_wake_by_time = LLONG_MAX;
+static s64 tegra_cpu1_wake_by_time = LLONG_MAX;
 
 static int tegra2_reset_sleeping_cpu(int cpu)
 {
