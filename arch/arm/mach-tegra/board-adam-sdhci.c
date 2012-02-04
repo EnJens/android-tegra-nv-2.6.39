@@ -54,7 +54,7 @@ static struct wifi_platform_data adam_wifi_control = {
 
 
 static struct platform_device adam_wifi_device = {
-        .name           = "bcm4329_wlan",
+        .name           = "bcmdhd_wlan",
         .id             = 1,
         .dev            = {
                 .platform_data = &adam_wifi_control,
@@ -131,14 +131,16 @@ static int adam_wifi_power(int on)
 
 	adam_bt_wifi_gpio_set(on);
         gpio_set_value(ADAM_WLAN_RESET, on);
-        mdelay(200);
+//        mdelay(200);
 
         return 0;
 }
 
 static int adam_wifi_reset(int on)
 {
-        pr_debug("%s: do nothing\n", __func__);
+	gpio_set_value(ADAM_WLAN_RESET, !on);
+        pr_debug("%s: %d\n", __func__, on);
+//	pr_debug("%s: do nothing, on = %d\n", __func__, on);
         return 0;
 }
 

@@ -517,9 +517,6 @@ static void __init tegra_adam_init(void)
 	/* Register touchscreen devices */
 	adam_touch_register_devices();
 	
-	/* Register SDHCI devices */
-	adam_sdhci_register_devices();
-
 	/* Register accelerometer device */
 	adam_sensors_register_devices();
 	
@@ -542,6 +539,9 @@ static void __init tegra_adam_init(void)
 
 	/* Register NAND flash devices */
 	adam_nand_register_devices();
+
+	/* Register SDHCI devices */
+	adam_sdhci_register_devices();
 	
 	adam_gps_mag_init();
 	adam_gps_mag_poweron();
