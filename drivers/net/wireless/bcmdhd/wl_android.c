@@ -712,6 +712,18 @@ int wifi_set_power(int on, unsigned long msec)
 	return 0;
 }
 
+int wifi_set_reset(int on, unsigned long msec)
+{
+        DHD_ERROR(("%s = %d\n", __FUNCTION__, on));
+        if (wifi_control_data && wifi_control_data->set_reset) {
+                wifi_control_data->set_reset(on);
+        }
+        if (msec)
+                mdelay(msec);
+        return 0;
+}
+
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35))
 int wifi_get_mac_addr(unsigned char *buf)
 {

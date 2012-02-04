@@ -43,6 +43,7 @@ extern  void bcm_wlan_power_on(int);
 #endif /* CUSTOMER_HW */
 #if defined(CUSTOMER_HW2)
 #ifdef CONFIG_WIFI_CONTROL_FUNC
+int wifi_set_reset(int on, unsigned long msec);
 int wifi_set_power(int on, unsigned long msec);
 int wifi_get_irq_number(unsigned long *irq_flags_ptr);
 int wifi_get_mac_addr(unsigned char *buf);
@@ -52,6 +53,7 @@ int wifi_set_power(int on, unsigned long msec) { return -1; }
 int wifi_get_irq_number(unsigned long *irq_flags_ptr) { return -1; }
 int wifi_get_mac_addr(unsigned char *buf) { return -1; }
 void *wifi_get_country_code(char *ccode) { return NULL; }
+int wifi_set_reset(int on, unsigned long msec) { return -1; }
 #endif /* CONFIG_WIFI_CONTROL_FUNC */
 #endif /* CUSTOMER_HW2 */
 
@@ -130,7 +132,8 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 			bcm_wlan_power_off(2);
 #endif /* CUSTOMER_HW */
 #ifdef CUSTOMER_HW2
-			wifi_set_power(0, 0);
+			msleep(50);
+			wifi_set_reset(1, 0);
 #endif
 			WL_ERROR(("=========== WLAN placed in RESET ========\n"));
 		break;
@@ -142,7 +145,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 			bcm_wlan_power_on(2);
 #endif /* CUSTOMER_HW */
 #ifdef CUSTOMER_HW2
-			wifi_set_power(1, 0);
+			wifi_set_reset(0, 0);
 #endif
 			WL_ERROR(("=========== WLAN going back to live  ========\n"));
 		break;
@@ -153,6 +156,10 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 #ifdef CUSTOMER_HW
 			bcm_wlan_power_off(1);
 #endif /* CUSTOMER_HW */
+#ifdef CUSTOMER_HW2
+                        wifi_set_power(0, 0);
+#endif
+
 		break;
 
 		case WLAN_POWER_ON:
@@ -163,6 +170,10 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 			/* Lets customer power to get stable */
 			OSL_DELAY(200);
 #endif /* CUSTOMER_HW */
+#ifdef CUSTOMER_HW2
+                        wifi_set_power(1, 200);
+#endif
+
 		break;
 	}
 }
