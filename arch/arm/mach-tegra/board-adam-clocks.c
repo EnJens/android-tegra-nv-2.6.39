@@ -67,41 +67,15 @@ static __initdata struct tegra_clk_init_table adam_clk_init_table[] = {
 	/* 32khz system clock */
 	{ "clk_32k",		NULL,			32768,		true},		/* always on */
 	{ "rtc",		"clk_32k",			32768,		true},		/* rtc-tegra : must be always on */
-	{ "kbc",		"clk_32k",			32768,		true},		/* tegra-kbc */
 	{ "blink",		"clk_32k",			32768,		false},		/* used for bluetooth */
-	{ "pll_s",		"clk_32k",			32768,		true},		/* must be always on */
 	/* Master clock */
-	{ "clk_m",		NULL,					0,		true},	 	/* must be always on - Frequency will be autodetected */
-	{ "bsev",		"clk_m",		12000000,	true},		/* tegra_aes */
-	{ "bsea",		"clk_m",		12000000,	false},		/* tegra_avp */
-	{ "vcp",		"clk_m",		12000000,	false},		/* tegra_avp */
-	{ "timer",		"clk_m",		12000000,		true},		/* timer */ /* always on - no init req */
-	{ "pll_u",		"clk_m",		480000000,		true},		/* USB ulpi clock */
-	{ "pll_p",		"clk_m",		216000000,	true},		/* must be always on */
 	{ "sdmmc2",		"pll_p",		48000000,	false},		/* sdhci-tegra.1 */
-	{ "pll_p_out4",		"pll_p",		24000000,	true},		/* must be always on - USB ulpi */
-	{ "pll_p_out2",		"pll_p",		108000000,	true},		/* must be always on */
-	{ "sclk",		"pll_p_out2",		108000000,	true},		/* must be always on */
-	{ "avp.sclk",		NULL,			108000000,	false},         /* must be always on */
-	{ "cop",		"sclk",			108000000,	false},		/* must be always on */
-	{ "hclk",		"sclk",			108000000,	true},		/* must be always on */
-	{ "pclk",		"hclk",			54000000,	true},		/* must be always on */
 	{ "pwm",		"clk_m",		12000000,	true},		/* tegra-pwm.0 tegra-pwm.1 tegra-pwm.2 tegra-pwm.3*/
-        { "pll_a",		 "pll_p_out1",		 56448000,	 true}, /* always on - audio clocks */
-        { "pll_a_out0",		 "pll_a",		 11289600,	 true}, /* always on - i2s audio */
-        { "i2s1", "pll_a_out0", 2822400, true}, /* i2s.0 */
-        { "i2s2", "pll_a_out0", 11289600, true}, /* i2s.1 */
-        { "audio", "pll_a_out0", 11289600, true},
-        { "audio_2x", "audio", 22579200, true},
-        { "spdif_in", "pll_p", 36000000, true},
-        { "spdif_out", "pll_a_out0", 5644800, true},
-	{ "cdev1", NULL, 0, true},
-	{ "uarta",    "pll_p",    216000000,  false},    /* tegra_uart.0 uart.0 */
-	{ "uartb",    "pll_p",    216000000,  false},    /* tegra_uart.1 uart.1 */
-	{ "uartc",    "pll_p",    216000000,  false},    /* tegra_uart.2 uart.2 */
-	{ "uartd",    "pll_p",    216000000,  false},    /* tegra_uart.3 uart.3 */
-	{ "uarte",    "pll_p",    216000000,  false},    /* tegra_uart.4 uart.4 */
-	{  NULL,			NULL,			0,		0},
+        { "i2s1", 		"pll_a_out0",		2822400,	true}, /* i2s.0 */
+        { "i2s2",		"pll_a_out0",		11289600,	true}, /* i2s.1 */
+	{ "cdev1",		NULL,			0,		true},
+	{ "uartc",		"pll_p",		216000000,	false},    /* tegra_uart.2 uart.0 */
+	{  NULL,		NULL,			0,		0},
 };
 
 
