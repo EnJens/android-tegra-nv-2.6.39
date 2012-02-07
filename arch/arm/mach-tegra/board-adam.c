@@ -322,7 +322,7 @@ static struct tegra_ulpi_config ulpi_phy_config = {
 };
 
 static struct tegra_ulpi_config adam_ehci2_ulpi_phy_config = {
-	.reset_gpio = ADAM_USB1_RESET,
+	//.reset_gpio = ADAM_USB1_RESET,
 	.clk = "cdev2",
 };
 
