@@ -260,7 +260,7 @@ static int tegra_alc5623_event_int_spk(struct snd_soc_dapm_widget *w,
 	struct snd_soc_codec *codec = dapm->codec;
 	struct tegra_alc5623 *machine = snd_soc_card_get_drvdata(card);
 	struct tegra_alc5623_platform_data *pdata = machine->pdata;
-
+	static bool firstEnable = true;
 	if (machine->spk_reg) {
 		if (SND_SOC_DAPM_EVENT_ON(event))
 			regulator_enable(machine->spk_reg);
@@ -268,9 +268,32 @@ static int tegra_alc5623_event_int_spk(struct snd_soc_dapm_widget *w,
 			regulator_disable(machine->spk_reg);
 	}
 
+
+	/*
+	*  Manage both amps in the Adam board.
+	*  Don't turn them on the first enable of the internal speaker.
+	*  This is to prevent the whine that results before the
+	*  userspace lib can set up the audio pathing.
+	*/
+	if (firstEnable == true && !!SND_SOC_DAPM_EVENT_ON(event)) {
+		firstEnable = false;
+	}
+	else {
+
+		// External Amp GPIO
+        	snd_soc_update_bits(codec, ALC5623_GPIO_OUTPUT_PIN_CTRL,
+                	        ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS,
+                        	(!!SND_SOC_DAPM_EVENT_ON(event))*ALC5623_GPIO_OUTPUT_GPIO_OUT_STATUS);
+
+		// ALC5623 Internal Auxout Amp
+		snd_soc_update_bits(codec, ALC5623_PWR_MANAG_ADD1,
+        	                ALC5623_PWR_ADD1_AUX_OUT_AMP,
+                	        (!!SND_SOC_DAPM_EVENT_ON(event))*ALC5623_PWR_ADD1_AUX_OUT_AMP);
+	}
+
 	if (!(machine->gpio_requested & GPIO_SPKR_EN)) {
 		return 0;
-	} 
+	}
 	gpio_set_value_cansleep(pdata->gpio_spkr_en,
 				SND_SOC_DAPM_EVENT_ON(event));
 
@@ -325,8 +348,6 @@ static int tegra_alc5623_event_int_mic(struct snd_soc_dapm_widget *w,
 #ifdef CONFIG_MACH_ADAM
 static const struct snd_soc_dapm_widget dapm_widgets[] = {
 	SND_SOC_DAPM_PRE("Channel Swap Detect", tegra_alc5623_event_pre_channel),
-	SND_SOC_DAPM_PGA("Ext Amp", ALC5623_GPIO_OUTPUT_PIN_CTRL, 1, 0, NULL, 0),
-	SND_SOC_DAPM_PGA("Auxout Amp", ALC5623_PWR_MANAG_ADD1, 1, 0, NULL, 0),
 	SND_SOC_DAPM_SPK("Int Spk", tegra_alc5623_event_int_spk),
 	SND_SOC_DAPM_HP("Headphone Jack", NULL),
 	SND_SOC_DAPM_MIC("Int Mic", NULL),
@@ -336,15 +357,14 @@ static const struct snd_soc_dapm_widget dapm_widgets[] = {
 static const struct snd_soc_dapm_route audio_map[] = {
 	{"Headphone Jack", NULL, "HPR"},
 	{"Headphone Jack", NULL, "HPL"},
-	{"Auxout Amp", "HPOut Mix", "AUXOUTR"},
-	{"Auxout Amp", "HPOut Mix", "AUXOUTL"},
-	{"Ext Amp", NULL, "Auxout Amp"},
-	{"Int Spk", NULL, "Ext Amp"},
+	{"Int Spk", NULL, "AUXOUTR"},
+	{"Int Spk", NULL, "AUXOUTL"},
 	{"Mic Bias1", NULL, "Int Mic"},
 	{"MIC1", NULL, "Mic Bias1"},
 	{"AUXINR", NULL, "FM Radio"},
 	{"AUXINL", NULL, "FM Radio"},
 };
+
 
 static const struct snd_kcontrol_new controls[] = {
 	SOC_DAPM_PIN_SWITCH("Int Spk"),
@@ -364,7 +384,6 @@ static const char* nc_pins[] = {
 
 static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 {
-          
 	struct snd_soc_codec *codec = rtd->codec;
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 	struct snd_soc_card *card = codec->card;
@@ -381,10 +400,11 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 		machine->gpio_requested |= GPIO_SPKR_EN;
 
 		gpio_direction_output(pdata->gpio_spkr_en, 0);
-	} else if(pdata->gpio_spkr_en == -2)
-        	snd_soc_update_bits(codec, ALC5623_GPIO_PIN_CONFIG,
+	} else if(pdata->gpio_spkr_en == -2) {
+          	snd_soc_update_bits(codec, ALC5623_GPIO_PIN_CONFIG,
                 	ALC5623_GPIO_PIN_CONFIG_GPIO_CONF,
                         0);
+	}
 
         if (gpio_is_valid(pdata->gpio_int_mic_en)) {
                 ret = gpio_request(pdata->gpio_int_mic_en, "int_mic_en");
