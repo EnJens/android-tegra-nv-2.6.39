@@ -255,7 +255,7 @@ static struct tegra_dc_out adam_disp1_out = {
         /* Enable dithering. Tegra also supports error
                diffusion, but when the active region is less
                than 640 pixels wide. */
-       .dither         = TEGRA_DC_ORDERED_DITHER,
+       .dither         = TEGRA_DC_ERRDIFF_DITHER,
 
 	.height 	= 136, /* mm */
 	.width 		= 217, /* mm */
