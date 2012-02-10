@@ -244,6 +244,7 @@ static void tegra_gpio_config(struct tegra_gpio_table* tab, int size)
 static struct tegra_gpio_table gpio_table[] = {
 	{ .gpio = ADAM_BT_RESET,			.enable = true },
 	{ .gpio = ADAM_GPSMAG_DISABLE,	.enable = true },
+	{ .gpio = ADAM_3G_DISABLE,	.enable = true },
 	{ .gpio = ADAM_KEY_VOLUMEUP,		.enable = true },
 	{ .gpio = ADAM_KEY_VOLUMEDOWN,	.enable = true },
 	{ .gpio = ADAM_KEY_POWER,		.enable = true },
