@@ -539,15 +539,15 @@ static int so340010_kbd_probe(struct i2c_client *client,
 	}
 
 	INIT_WORK(&dev->work, so340010_work_func);
-	if(request_threaded_irq(client->irq, NULL, so340010_irq_callback, IRQF_TRIGGER_FALLING, 
-			"so340010_kbd", dev))
-		goto failed_enable_irq;
-
-
 	if (so340010_reset(dev)) {
 		logd(TAG "so340010_kbd_probe so340010_reset fail \r\n");
 		goto failed_reset_hardware;
 	}
+
+	if(request_threaded_irq(client->irq, NULL, so340010_irq_callback, IRQF_TRIGGER_FALLING, 
+			"so340010_kbd", dev))
+		goto failed_enable_irq;
+
 
 #if (__SO340010_GENERIC_DEBUG__)
 	if (device_create_file(&client->dev, &dev_attr_debug)
