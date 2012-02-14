@@ -75,6 +75,7 @@ static __initdata struct tegra_clk_init_table adam_clk_init_table[] = {
         { "i2s2",		"pll_a_out0",		11289600,	true}, /* i2s.1 */
 	{ "cdev1",		NULL,			0,		true},
 	{ "uartc",		"pll_p",		216000000,	false},    /* tegra_uart.2 uart.0 */
+	{ "uartd",		"pll_p",		216000000,	false},    /* tegra_uart.3 uart.3 */
 	{  NULL,		NULL,			0,		0},
 };
 
