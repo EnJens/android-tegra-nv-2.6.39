@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_common.c 290546 2011-10-19 01:55:21Z $
+ * $Id: dhd_common.c 307573 2012-01-12 00:04:39Z $
  */
 #include <typedefs.h>
 #include <osl.h>
@@ -170,7 +170,7 @@ const bcm_iovar_t dhd_iovars[] = {
 };
 
 struct dhd_cmn *
-dhd_common_init(uint16 devid, osl_t *osh)
+dhd_common_init(osl_t *osh)
 {
 	dhd_cmn_t *cmn;
 
@@ -190,22 +190,17 @@ dhd_common_init(uint16 devid, osl_t *osh)
 
 #ifdef CONFIG_BCMDHD_FW_PATH
 	bcm_strncpy_s(fw_path, sizeof(fw_path), CONFIG_BCMDHD_FW_PATH, MOD_PARAM_PATHLEN-1);
-#elif defined(CONFIG_BCMDHD_FW_DIR)  /* CONFIG_BCMDHD_FW_PATH */
-	sprintf(fw_path, "%s/bcm%x/fw_bcmdhd.bin", CONFIG_BCMDHD_FW_DIR, devid);
-#else
+#else /* CONFIG_BCMDHD_FW_PATH */
 	fw_path[0] = '\0';
-#endif /* CONFIG_BCMDHD_FW_DIR */
+#endif /* CONFIG_BCMDHD_FW_PATH */
 #ifdef CONFIG_BCMDHD_NVRAM_PATH
 	bcm_strncpy_s(nv_path, sizeof(nv_path), CONFIG_BCMDHD_NVRAM_PATH, MOD_PARAM_PATHLEN-1);
-#elif defined(CONFIG_BCMDHD_NVRAM_DIR) /* CONFIG_BCMDHD_NVRAM_PATH */
-	sprintf(nv_path, "%s/nvram_%x.txt", CONFIG_BCMDHD_NVRAM_DIR, devid);
-#else
+#else /* CONFIG_BCMDHD_NVRAM_PATH */
 	nv_path[0] = '\0';
 #endif /* CONFIG_BCMDHD_NVRAM_PATH */
 #ifdef SOFTAP
 	fw_path2[0] = '\0';
 #endif
-	DHD_ERROR(("bcmdhd: fw_path: %s nvram_path: %s\n", fw_path, nv_path));
 	return cmn;
 }
 
@@ -305,7 +300,8 @@ dhd_wl_ioctl(dhd_pub_t *dhd_pub, int ifindex, wl_ioctl_t *ioc, void *buf, int le
 	dhd_os_proto_block(dhd_pub);
 
 	ret = dhd_prot_ioctl(dhd_pub, ifindex, ioc, buf, len);
-
+	if (!ret)
+		dhd_os_check_hang(dhd_pub, ifindex, ret);
 
 	dhd_os_proto_unblock(dhd_pub);
 	return ret;
@@ -340,6 +336,11 @@ dhd_doiovar(dhd_pub_t *dhd_pub, const bcm_iovar_t *vi, uint32 actionid, const ch
 
 	case IOV_SVAL(IOV_MSGLEVEL):
 		dhd_msg_level = int_val;
+#ifdef WL_CFG80211
+		/* Enable DHD and WL logs in oneshot */
+		if (dhd_msg_level & DHD_WL_VAL)
+			wl_cfg80211_enable_trace(dhd_msg_level);
+#endif
 		break;
 	case IOV_GVAL(IOV_BCMERRORSTR):
 		bcm_strncpy_s((char *)arg, len, bcmerrorstr(dhd_pub->bcmerror), BCME_STRLEN);
@@ -861,6 +862,8 @@ wl_show_host_event(wl_event_msg_t *event, void *event_data)
 		break;
 
 	case WLC_E_SCAN_COMPLETE:
+	case WLC_E_ASSOC_REQ_IE:
+	case WLC_E_ASSOC_RESP_IE:
 	case WLC_E_PMKID_CACHE:
 		DHD_EVENT(("MACEVENT: %s\n", event_name));
 		break;
@@ -1493,7 +1496,7 @@ dhd_arp_get_arp_hostip_table(dhd_pub_t *dhd, void *buf, int buflen)
 		return -1;
 
 	iov_len = bcm_mkiovar("arp_hostip", 0, 0, buf, buflen);
-	retcode = dhd_wl_ioctl_cmd(dhd, WLC_GET_VAR, buf, buflen, TRUE, 0);
+	retcode = dhd_wl_ioctl_cmd(dhd, WLC_GET_VAR, buf, buflen, FALSE, 0);
 
 	if (retcode) {
 		DHD_TRACE(("%s: ioctl WLC_GET_VAR error %d\n",
@@ -1906,6 +1909,7 @@ dhd_pno_set(dhd_pub_t *dhd, wlc_ssid_t* ssids_local, int nssid, ushort scan_fr,
 	if ((!dhd) && (!ssids_local)) {
 		DHD_ERROR(("%s error exit\n", __FUNCTION__));
 		err = -1;
+		return err;
 	}
 
 	if (dhd_check_ap_wfd_mode_set(dhd) == TRUE)
@@ -2159,14 +2163,14 @@ wl_iw_parse_channel_list_tlv(char** list_str, uint16* channel_list,
 int
 wl_iw_parse_ssid_list_tlv(char** list_str, wlc_ssid_t* ssid, int max, int *bytes_left)
 {
-	char* str =  *list_str;
+	char* str;
 	int idx = 0;
 
 	if ((list_str == NULL) || (*list_str == NULL) || (*bytes_left < 0)) {
 		DHD_ERROR(("%s error paramters\n", __FUNCTION__));
 		return -1;
 	}
-
+	str = *list_str;
 	while (*bytes_left > 0) {
 
 		if (str[0] != CSCAN_TLV_TYPE_SSID_IE) {

@@ -21,14 +21,13 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: bcmsdh_sdmmc.h,v 13.5.88.1 2010-12-23 01:13:20 Exp $
+ * $Id: bcmsdh_sdmmc.h 277737 2011-08-16 17:54:59Z $
  */
 
 #ifndef __BCMSDH_SDMMC_H__
 #define __BCMSDH_SDMMC_H__
 
 #define sd_err(x)
-//#define sd_trace(x) do { printk x; } while(0)
 #define sd_trace(x)
 #define sd_info(x)
 #define sd_debug(x)
