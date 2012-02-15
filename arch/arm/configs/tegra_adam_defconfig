@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux/arm 2.6.39.4 Kernel Configuration
-# Tue Feb 14 02:39:51 2012
+# Wed Feb 15 19:37:30 2012
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -2356,7 +2356,7 @@ CONFIG_MMC=y
 # CONFIG_MMC_DEBUG is not set
 CONFIG_MMC_UNSAFE_RESUME=y
 # CONFIG_MMC_CLKGATE is not set
-# CONFIG_MMC_EMBEDDED_SDIO is not set
+CONFIG_MMC_EMBEDDED_SDIO=y
 CONFIG_MMC_PARANOID_SD_INIT=y
 
 #
