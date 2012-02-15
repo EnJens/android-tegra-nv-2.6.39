@@ -131,7 +131,7 @@ static int adam_wifi_power(int on)
 
 	adam_bt_wifi_gpio_set(on);
         gpio_set_value(ADAM_WLAN_RESET, on);
-//        mdelay(200);
+        mdelay(200);
 
         return 0;
 }

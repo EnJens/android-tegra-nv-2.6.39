@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: bcmsdh_linux.c,v 1.72.6.5 2010-12-23 01:13:15 Exp $
+ * $Id: bcmsdh_linux.c 308641 2012-01-17 02:18:02Z $
  */
 
 /**
@@ -35,7 +35,6 @@
 
 #include <linux/pci.h>
 #include <linux/completion.h>
-#include <linux/mmc/sdio_func.h>
 
 #include <osl.h>
 #include <pcicfg.h>
@@ -80,7 +79,7 @@ static bcmsdh_hc_t *sdhcinfo = NULL;
 static bcmsdh_driver_t drvinfo = {NULL, NULL};
 
 /* debugging macros */
-#define SDLX_MSG(x) printk x
+#define SDLX_MSG(x)
 
 /**
  * Checks to see if vendor and device IDs match a supported SDIO Host Controller.
@@ -148,17 +147,6 @@ static int __devexit bcmsdh_remove(struct device *dev);
 #endif /* BCMLXSDMMC */
 
 #ifndef BCMLXSDMMC
-static struct device_driver bcmsdh_driver = {
-	.name		= "pxa2xx-mci",
-	.bus		= &platform_bus_type,
-	.probe		= bcmsdh_probe,
-	.remove		= bcmsdh_remove,
-	.suspend	= NULL,
-	.resume		= NULL,
-	};
-#endif /* BCMLXSDMMC */
-
-#ifndef BCMLXSDMMC
 static
 #endif /* BCMLXSDMMC */
 int bcmsdh_probe(struct device *dev)
@@ -167,7 +155,6 @@ int bcmsdh_probe(struct device *dev)
 	bcmsdh_hc_t *sdhc = NULL;
 	ulong regs = 0;
 	bcmsdh_info_t *sdh = NULL;
-	struct sdio_func *func = container_of(dev, struct sdio_func, dev);
 #if !defined(BCMLXSDMMC) && defined(BCMPLATFORM_BUS)
 	struct platform_device *pdev;
 	struct resource *r;
@@ -240,14 +227,13 @@ int bcmsdh_probe(struct device *dev)
 	/* chain SDIO Host Controller info together */
 	sdhc->next = sdhcinfo;
 	sdhcinfo = sdhc;
+
 	/* Read the vendor/device ID from the CIS */
 	vendevid = bcmsdh_query_device(sdh);
-
-
 	/* try to attach to the target device */
 	if (!(sdhc->ch = drvinfo.attach((vendevid >> 16),
-					func->device, 0, 0, 0, 0,
-					(void *)regs, NULL, sdh))) {
+	                                 (vendevid & 0xFFFF), 0, 0, 0, 0,
+	                                (void *)regs, NULL, sdh))) {
 		SDLX_MSG(("%s: device attach failed\n", __FUNCTION__));
 		goto err;
 	}
@@ -277,6 +263,7 @@ int bcmsdh_remove(struct device *dev)
 	sdhc = sdhcinfo;
 	drvinfo.detach(sdhc->ch);
 	bcmsdh_detach(sdhc->osh, sdhc->sdh);
+
 	/* find the SDIO Host Controller state for this pdev and take it out from the list */
 	for (sdhc = sdhcinfo, prev = NULL; sdhc; sdhc = sdhc->next) {
 		if (sdhc->dev == (void *)dev) {
@@ -292,7 +279,6 @@ int bcmsdh_remove(struct device *dev)
 		SDLX_MSG(("%s: failed\n", __FUNCTION__));
 		return 0;
 	}
-
 
 	/* release SDIO Host Controller info */
 	osh = sdhc->osh;
@@ -534,13 +520,8 @@ bcmsdh_register(bcmsdh_driver_t *driver)
 	drvinfo = *driver;
 
 #if defined(BCMPLATFORM_BUS)
-#if defined(BCMLXSDMMC)
 	SDLX_MSG(("Linux Kernel SDIO/MMC Driver\n"));
 	error = sdio_function_init();
-#else
-	SDLX_MSG(("Intel PXA270 SDIO Driver\n"));
-	error = driver_register(&bcmsdh_driver);
-#endif /* defined(BCMLXSDMMC) */
 	return error;
 #endif /* defined(BCMPLATFORM_BUS) */
 
@@ -568,14 +549,12 @@ bcmsdh_unregister(void)
 	if (bcmsdh_pci_driver.node.next)
 #endif
 
-#if defined(BCMPLATFORM_BUS) && !defined(BCMLXSDMMC)
-		driver_unregister(&bcmsdh_driver);
-#endif
 #if defined(BCMLXSDMMC)
 	sdio_function_cleanup();
 #endif /* BCMLXSDMMC */
+
 #if !defined(BCMPLATFORM_BUS) && !defined(BCMLXSDMMC)
-		pci_unregister_driver(&bcmsdh_pci_driver);
+	pci_unregister_driver(&bcmsdh_pci_driver);
 #endif /* BCMPLATFORM_BUS */
 }
 
@@ -641,6 +620,13 @@ int bcmsdh_register_oob_intr(void * dhdp)
 	return 0;
 }
 
+void *bcmsdh_get_drvdata(void)
+{
+	if (!sdhcinfo)
+		return NULL;
+	return dev_get_drvdata(sdhcinfo->dev);
+}
+
 void bcmsdh_set_irq(int flag)
 {
 	if (sdhcinfo->oob_irq_registered && sdhcinfo->oob_irq_enable_flag != flag) {
@@ -667,6 +653,7 @@ void bcmsdh_unregister_oob_intr(void)
 	}
 }
 #endif /* defined(OOB_INTR_ONLY) */
+
 /* Module parameters specific to each host-controller driver */
 
 extern uint sd_msglevel;	/* Debug message level */
@@ -690,6 +677,10 @@ module_param(sd_hiok, uint, 0);
 extern uint sd_f2_blocksize;
 module_param(sd_f2_blocksize, int, 0);
 
+#ifdef BCMSDIOH_STD
+extern int sd_uhsimode;
+module_param(sd_uhsimode, int, 0);
+#endif
 
 #ifdef BCMSDH_MODULE
 EXPORT_SYMBOL(bcmsdh_attach);

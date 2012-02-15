@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: bcmsdh_sdmmc.c 282820 2011-09-09 15:40:35Z $
+ * $Id: bcmsdh_sdmmc.c 301794 2011-12-08 20:41:35Z $
  */
 #include <typedefs.h>
 
@@ -248,33 +248,28 @@ sdioh_enable_func_intr(void)
 	return SDIOH_API_RC_SUCCESS;
 }
 
-#endif /* defined(OOB_INTR_ONLY) && defined(HW_OOB) */
-
 extern SDIOH_API_RC
-sdioh_disable_func_intr(int func)
+sdioh_disable_func_intr(void)
 {
 	uint8 reg;
 	int err;
 
-	if (gInstance->func[func]) {
-		sdio_claim_host(gInstance->func[func]);
-		reg = sdio_readb(gInstance->func[func], SDIOD_CCCR_INTEN, &err);
+	if (gInstance->func[0]) {
+		sdio_claim_host(gInstance->func[0]);
+		reg = sdio_readb(gInstance->func[0], SDIOD_CCCR_INTEN, &err);
 		if (err) {
 			sd_err(("%s: error for read SDIO_CCCR_IENx : 0x%x\n", __FUNCTION__, err));
-			sdio_release_host(gInstance->func[func]);
+			sdio_release_host(gInstance->func[0]);
 			return SDIOH_API_RC_FAIL;
 		}
-#if defined(HW_OOB)
+
 		reg &= ~(INTR_CTL_FUNC1_EN | INTR_CTL_FUNC2_EN);
-#else
-		reg &= ~(1 << func);
-#endif
 		/* Disable master interrupt with the last function interrupt */
 		if (!(reg & 0xFE))
 			reg = 0;
-		sdio_writeb(gInstance->func[func], reg, SDIOD_CCCR_INTEN, &err);
+		sdio_writeb(gInstance->func[0], reg, SDIOD_CCCR_INTEN, &err);
 
-		sdio_release_host(gInstance->func[func]);
+		sdio_release_host(gInstance->func[0]);
 		if (err) {
 			sd_err(("%s: error for write SDIO_CCCR_IENx : 0x%x\n", __FUNCTION__, err));
 			return SDIOH_API_RC_FAIL;
@@ -282,7 +277,7 @@ sdioh_disable_func_intr(int func)
 	}
 	return SDIOH_API_RC_SUCCESS;
 }
-
+#endif /* defined(OOB_INTR_ONLY) && defined(HW_OOB) */
 
 /* Configure callback to client when we recieve client interrupt */
 extern SDIOH_API_RC
@@ -324,9 +319,6 @@ sdioh_interrupt_deregister(sdioh_info_t *sd)
 
 #if !defined(OOB_INTR_ONLY)
 	if (gInstance->func[1]) {
-		sdioh_disable_func_intr(1);
-		/*Wait for the pending interrupts to be cleared*/
-		msleep(300);
 		/* register and unmask irq */
 		sdio_claim_host(gInstance->func[1]);
 		sdio_release_irq(gInstance->func[1]);
@@ -334,9 +326,6 @@ sdioh_interrupt_deregister(sdioh_info_t *sd)
 	}
 
 	if (gInstance->func[2]) {
-		sdioh_disable_func_intr(2);
-		/*Wait for the pending interrupts to be cleared*/
-		msleep(300);
 		/* Claim host controller F2 */
 		sdio_claim_host(gInstance->func[2]);
 		sdio_release_irq(gInstance->func[2]);
@@ -348,7 +337,7 @@ sdioh_interrupt_deregister(sdioh_info_t *sd)
 	sd->intr_handler = NULL;
 	sd->intr_handler_arg = NULL;
 #elif defined(HW_OOB)
-	sdioh_disable_func_intr(0);
+	sdioh_disable_func_intr();
 #endif /* !defined(OOB_INTR_ONLY) */
 	return SDIOH_API_RC_SUCCESS;
 }
@@ -459,6 +448,7 @@ sdioh_iovar_op(sdioh_info_t *si, const char *name,
 		bcopy(params, &int_val, sizeof(int_val));
 
 	bool_val = (int_val != 0) ? TRUE : FALSE;
+	BCM_REFERENCE(bool_val);
 
 	actionid = set ? IOV_SVAL(vi->varid) : IOV_GVAL(vi->varid);
 	switch (actionid) {
@@ -1013,11 +1003,11 @@ sdioh_request_buffer(sdioh_info_t *sd, uint pio_dma, uint fix_inc, uint write, u
 	if (pkt == NULL) {
 		sd_data(("%s: Creating new %s Packet, len=%d\n",
 		         __FUNCTION__, write ? "TX" : "RX", buflen_u));
-#ifdef DHD_USE_STATIC_BUF
+#ifdef CONFIG_DHD_USE_STATIC_BUF
 		if (!(mypkt = PKTGET_STATIC(sd->osh, buflen_u, write ? TRUE : FALSE))) {
 #else
 		if (!(mypkt = PKTGET(sd->osh, buflen_u, write ? TRUE : FALSE))) {
-#endif /* DHD_USE_STATIC_BUF */
+#endif /* CONFIG_DHD_USE_STATIC_BUF */
 			sd_err(("%s: PKTGET failed: len %d\n",
 			           __FUNCTION__, buflen_u));
 			return SDIOH_API_RC_FAIL;
@@ -1034,11 +1024,11 @@ sdioh_request_buffer(sdioh_info_t *sd, uint pio_dma, uint fix_inc, uint write, u
 		if (!write) {
 			bcopy(PKTDATA(sd->osh, mypkt), buffer, buflen_u);
 		}
-#ifdef DHD_USE_STATIC_BUF
+#ifdef CONFIG_DHD_USE_STATIC_BUF
 		PKTFREE_STATIC(sd->osh, mypkt, write ? TRUE : FALSE);
 #else
 		PKTFREE(sd->osh, mypkt, write ? TRUE : FALSE);
-#endif /* DHD_USE_STATIC_BUF */
+#endif /* CONFIG_DHD_USE_STATIC_BUF */
 	} else if (((uint32)(PKTDATA(sd->osh, pkt)) & DMA_ALIGN_MASK) != 0) {
 		/* Case 2: We have a packet, but it is unaligned. */
 
@@ -1047,11 +1037,11 @@ sdioh_request_buffer(sdioh_info_t *sd, uint pio_dma, uint fix_inc, uint write, u
 
 		sd_data(("%s: Creating aligned %s Packet, len=%d\n",
 		         __FUNCTION__, write ? "TX" : "RX", PKTLEN(sd->osh, pkt)));
-#ifdef DHD_USE_STATIC_BUF
+#ifdef CONFIG_DHD_USE_STATIC_BUF
 		if (!(mypkt = PKTGET_STATIC(sd->osh, PKTLEN(sd->osh, pkt), write ? TRUE : FALSE))) {
 #else
 		if (!(mypkt = PKTGET(sd->osh, PKTLEN(sd->osh, pkt), write ? TRUE : FALSE))) {
-#endif /* DHD_USE_STATIC_BUF */
+#endif /* CONFIG_DHD_USE_STATIC_BUF */
 			sd_err(("%s: PKTGET failed: len %d\n",
 			           __FUNCTION__, PKTLEN(sd->osh, pkt)));
 			return SDIOH_API_RC_FAIL;
@@ -1072,11 +1062,11 @@ sdioh_request_buffer(sdioh_info_t *sd, uint pio_dma, uint fix_inc, uint write, u
 			      PKTDATA(sd->osh, pkt),
 			      PKTLEN(sd->osh, mypkt));
 		}
-#ifdef DHD_USE_STATIC_BUF
+#ifdef CONFIG_DHD_USE_STATIC_BUF
 		PKTFREE_STATIC(sd->osh, mypkt, write ? TRUE : FALSE);
 #else
 		PKTFREE(sd->osh, mypkt, write ? TRUE : FALSE);
-#endif /* DHD_USE_STATIC_BUF */
+#endif /* CONFIG_DHD_USE_STATIC_BUF */
 	} else { /* case 3: We have a packet and it is aligned. */
 		sd_data(("%s: Aligned %s Packet, direct DMA\n",
 		         __FUNCTION__, write ? "Tx" : "Rx"));
@@ -1190,6 +1180,7 @@ static void IRQHandlerF2(struct sdio_func *func)
 	sd = gInstance->sd;
 
 	ASSERT(sd != NULL);
+	BCM_REFERENCE(sd);
 }
 #endif /* !defined(OOB_INTR_ONLY) */
 
@@ -1314,7 +1305,7 @@ sdioh_stop(sdioh_info_t *si)
 		sdio_release_host(gInstance->func[0]);
 #else /* defined(OOB_INTR_ONLY) */
 #if defined(HW_OOB)
-		sdioh_disable_func_intr(0);
+		sdioh_disable_func_intr();
 #endif
 		bcmsdh_oob_intr_set(FALSE);
 #endif /* !defined(OOB_INTR_ONLY) */
