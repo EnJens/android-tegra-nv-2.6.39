@@ -159,6 +159,7 @@ static int so340010_i2c_write(struct so340010_kbd_dev *dev, unsigned short reg_s
 	msg.addr = dev->client->addr;
 	msg.len = write_num + 2;
 	msg.buf = write_buffer;
+	msg.flags = I2C_M_IGNORE_NAK;
 
 	ret = i2c_transfer(dev->client->adapter, &msg, 1);
 	if(ret != 1)
