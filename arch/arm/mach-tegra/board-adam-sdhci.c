@@ -93,13 +93,20 @@ static struct embedded_sdio_data embedded_sdio_data0 = {
         },
 };
 
+
+static unsigned int adam_wifi_status(struct device *dev)
+{
+	return adam_wlan_cd;
+}
+
 struct tegra_sdhci_platform_data adam_wlan_data = {
 //        .clk_id = NULL,
 //        .force_hs = 0,
 	.mmc_data = {
         	.register_status_notify = adam_wifi_status_register,
-//		.embedded_sdio = &embedded_sdio_data0,
-//		.built_in = 1,
+		.embedded_sdio = &embedded_sdio_data0,
+		.built_in = 1,
+		.status = adam_wifi_status,
 	},
 	.cd_gpio = -1,
 	.wp_gpio = -1,
