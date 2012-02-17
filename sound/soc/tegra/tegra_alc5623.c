@@ -32,6 +32,7 @@
 
 #include <asm/mach-types.h>
 
+#include <linux/delay.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
@@ -459,6 +460,17 @@ static int tegra_alc5623_init(struct snd_soc_pcm_runtime *rtd)
 
 	return 0;
 }
+static int alc5623_pre_resume(struct snd_soc_card *card) {
+
+	/* Delay on resume because otherwise a paging error 
+	 * occurs. There is probably a deeper problem here,
+	 * but this works.
+	 */
+
+	msleep(100);
+	return 0;
+}
+
 
 static struct snd_soc_dai_link tegra_alc5623_dai[] = {
 	{
@@ -491,10 +503,12 @@ static struct snd_soc_dai_link tegra_alc5623_dai[] = {
 	}
 };
 
+
 static struct snd_soc_card snd_soc_tegra_alc5623 = {
 	.name = "tegra-alc5623",
 	.dai_link = tegra_alc5623_dai,
 	.num_links = ARRAY_SIZE(tegra_alc5623_dai),
+	.resume_pre = alc5623_pre_resume,
 };
 
 static __devinit int tegra_alc5623_driver_probe(struct platform_device *pdev)

@@ -2,13 +2,13 @@
  * Linux cfg80211 driver - Android related functions
  *
  * Copyright (C) 1999-2011, Broadcom Corporation
- *
+ * 
  *         Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
  * under the terms of the GNU General Public License version 2 (the "GPL"),
  * available at http://www.broadcom.com/licenses/GPLv2.php, with the
  * following added to such license:
- *
+ * 
  *      As a special exception, the copyright holders of this software give you
  * permission to link this software with independent modules, and to copy and
  * distribute the resulting executable under terms of your choice, provided that
@@ -16,7 +16,7 @@
  * the license of that module.  An independent module is a module which is not
  * derived from this software.  The special exception does not apply to any
  * modifications of the software.
- *
+ * 
  *      Notwithstanding the above, under no circumstances may you combine this
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
@@ -73,7 +73,6 @@
 #define CMD_GETBAND				"GETBAND"
 #define CMD_COUNTRY				"COUNTRY"
 #define CMD_P2P_SET_NOA			"P2P_SET_NOA"
-#define CMD_P2P_GET_NOA			"P2P_GET_NOA"
 #define CMD_P2P_SET_PS			"P2P_SET_PS"
 #define CMD_SET_AP_WPS_P2P_IE	"SET_AP_WPS_P2P_IE"
 
@@ -113,6 +112,7 @@ typedef struct android_wifi_priv_cmd {
 void dhd_customer_gpio_wlan_ctrl(int onoff);
 uint dhd_dev_reset(struct net_device *dev, uint8 flag);
 void dhd_dev_init_ioctl(struct net_device *dev);
+int dhd_dev_init_ioctl_ret(struct net_device *dev);
 #ifdef WL_CFG80211
 int wl_cfg80211_get_p2p_dev_addr(struct net_device *net, struct ether_addr *p2pdev_addr);
 int wl_cfg80211_set_btcoex_dhcp(struct net_device *dev, char *command);
@@ -126,6 +126,8 @@ int wl_cfg80211_get_p2p_noa(struct net_device *net, char* buf, int len)
 int wl_cfg80211_set_p2p_ps(struct net_device *net, char* buf, int len)
 { return 0; }
 #endif
+extern int dhd_os_check_if_up(void *dhdp);
+extern void *bcmsdh_get_drvdata(void);
 
 extern bool ap_fw_loaded;
 #ifdef CUSTOMER_HW2
@@ -345,11 +347,12 @@ static int wl_android_get_p2p_dev_addr(struct net_device *ndev, char *command, i
 /**
  * Global function definitions (declared in wl_android.h)
  */
-
 int wl_android_wifi_on(struct net_device *dev)
 {
 	int ret = 0;
+	int retry = 1;
 
+onretry:
 	printk("%s in\n", __FUNCTION__);
 	if (!dev) {
 		DHD_ERROR(("%s: dev is null\n", __FUNCTION__));
@@ -362,11 +365,19 @@ int wl_android_wifi_on(struct net_device *dev)
 		sdioh_start(NULL, 0);
 		ret = dhd_dev_reset(dev, FALSE);
 		sdioh_start(NULL, 1);
-		dhd_dev_init_ioctl(dev);
+		if (!ret)
+			ret = dhd_dev_init_ioctl_ret(dev);
 		g_wifi_on = 1;
 	}
 	dhd_net_if_unlock(dev);
-
+////////////////////////////////// Adam Patch /////////////////////////////////////
+	if (ret == -EIO && retry < 5) {
+		wl_android_wifi_off(dev);
+		msleep(1000);
+		printk("I/O Error on wifi, power down and try again. Attempt %d/5\n", retry);
+		goto onretry;
+	}
+////////////////////////////////////////////////////////////////////////////////////
 	return ret;
 }
 
@@ -382,7 +393,7 @@ int wl_android_wifi_off(struct net_device *dev)
 
 	dhd_net_if_lock(dev);
 	if (g_wifi_on) {
-		dhd_dev_reset(dev, 1);
+		ret = dhd_dev_reset(dev, TRUE);
 		sdioh_stop(NULL);
 		dhd_customer_gpio_wlan_ctrl(WLAN_RESET_OFF);
 		g_wifi_on = 0;
@@ -534,9 +545,6 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 		bytes_written = wl_cfg80211_set_p2p_noa(net, command + skip,
 			priv_cmd.total_len - skip);
 	}
-	else if (strnicmp(command, CMD_P2P_GET_NOA, strlen(CMD_P2P_GET_NOA)) == 0) {
-		bytes_written = wl_cfg80211_get_p2p_noa(net, command, priv_cmd.total_len);
-	}
 	else if (strnicmp(command, CMD_P2P_SET_PS, strlen(CMD_P2P_SET_PS)) == 0) {
 		int skip = strlen(CMD_P2P_SET_PS) + 1;
 		bytes_written = wl_cfg80211_set_p2p_ps(net, command + skip,
@@ -556,8 +564,10 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 		bytes_written = strlen("OK");
 	}
 
-	if (bytes_written > 0) {
-		if (bytes_written > priv_cmd.total_len) {
+	if (bytes_written >= 0) {
+		if ((bytes_written == 0) && (priv_cmd.total_len > 0))
+			command[0] = '\0';
+		if (bytes_written >= priv_cmd.total_len) {
 			DHD_ERROR(("%s: bytes_written = %d\n", __FUNCTION__, bytes_written));
 			bytes_written = priv_cmd.total_len;
 		} else {
@@ -568,7 +578,8 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 			DHD_ERROR(("%s: failed to copy data to user buffer\n", __FUNCTION__));
 			ret = -EFAULT;
 		}
-	} else {
+	}
+	else {
 		ret = bytes_written;
 	}
 
@@ -605,30 +616,14 @@ int wl_android_exit(void)
 	return ret;
 }
 
-int wl_android_post_init(void)
+void wl_android_post_init(void)
 {
-	struct net_device *ndev;
-	int ret = 0;
-	char buf[IFNAMSIZ];
 	if (!dhd_download_fw_on_driverload) {
 		/* Call customer gpio to turn off power with WL_REG_ON signal */
 		dhd_customer_gpio_wlan_ctrl(WLAN_RESET_OFF);
 		g_wifi_on = 0;
-	} else {
-		memset(buf, 0, IFNAMSIZ);
-#ifdef CUSTOMER_HW2
-		snprintf(buf, IFNAMSIZ, "%s%d", iface_name, 0);
-#else
-		snprintf(buf, IFNAMSIZ, "%s%d", "eth", 0);
-#endif
-		if ((ndev = dev_get_by_name (&init_net, buf)) != NULL) {
-			dhd_dev_init_ioctl(ndev);
-			dev_put(ndev);
-		}
 	}
-	return ret;
 }
-
 /**
  * Functions for Android WiFi card detection
  */
@@ -672,20 +667,21 @@ void wl_android_wifictrl_func_del(void)
 	}
 }
 
-void* wl_android_prealloc(int section, unsigned long size)
+void *wl_android_prealloc(int section, unsigned long size)
 {
 	void *alloc_ptr = NULL;
 	if (wifi_control_data && wifi_control_data->mem_prealloc) {
 		alloc_ptr = wifi_control_data->mem_prealloc(section, size);
 		if (alloc_ptr) {
 			DHD_INFO(("success alloc section %d\n", section));
-			bzero(alloc_ptr, size);
+			if (size != 0L)
+				bzero(alloc_ptr, size);
 			return alloc_ptr;
 		}
 	}
 
 	DHD_ERROR(("can't alloc section %d\n", section));
-	return 0;
+	return NULL;
 }
 
 int wifi_get_irq_number(unsigned long *irq_flags_ptr)
@@ -708,7 +704,7 @@ int wifi_set_power(int on, unsigned long msec)
 		wifi_control_data->set_power(on);
 	}
 	if (msec)
-		mdelay(msec);
+		msleep(msec);
 	return 0;
 }
 
@@ -784,18 +780,19 @@ static int wifi_remove(struct platform_device *pdev)
 static int wifi_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	DHD_TRACE(("##> %s\n", __FUNCTION__));
-#if defined(OOB_INTR_ONLY)
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 39)) && defined(OOB_INTR_ONLY)
 	bcmsdh_oob_intr_set(0);
-#endif /* (OOB_INTR_ONLY) */
+#endif
 	return 0;
 }
 
 static int wifi_resume(struct platform_device *pdev)
 {
 	DHD_TRACE(("##> %s\n", __FUNCTION__));
-#if defined(OOB_INTR_ONLY)
-	bcmsdh_oob_intr_set(1);
-#endif /* (OOB_INTR_ONLY) */
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 39)) && defined(OOB_INTR_ONLY)
+	if (dhd_os_check_if_up(bcmsdh_get_drvdata()))
+		bcmsdh_oob_intr_set(1);
+#endif
 	return 0;
 }
 

@@ -35,7 +35,7 @@
 #include <wl_iw.h>
 
 #define WL_ERROR(x) printf x
-#define WL_TRACE(x) printf x
+#define WL_TRACE(x)
 
 #ifdef CUSTOMER_HW
 extern  void bcm_wlan_power_off(int);
@@ -130,6 +130,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 			bcm_wlan_power_off(2);
 #endif /* CUSTOMER_HW */
 #ifdef CUSTOMER_HW2
+			msleep(50);
 			wifi_set_power(0, 0);
 #endif
 			WL_ERROR(("=========== WLAN placed in RESET ========\n"));
@@ -143,6 +144,7 @@ dhd_customer_gpio_wlan_ctrl(int onoff)
 #endif /* CUSTOMER_HW */
 #ifdef CUSTOMER_HW2
 			wifi_set_power(1, 0);
+
 #endif
 			WL_ERROR(("=========== WLAN going back to live  ========\n"));
 		break;

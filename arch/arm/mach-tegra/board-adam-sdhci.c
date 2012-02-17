@@ -54,7 +54,7 @@ static struct wifi_platform_data adam_wifi_control = {
 
 
 static struct platform_device adam_wifi_device = {
-        .name           = "bcm4329_wlan",
+        .name           = "bcmdhd_wlan",
         .id             = 1,
         .dev            = {
                 .platform_data = &adam_wifi_control,
@@ -93,13 +93,20 @@ static struct embedded_sdio_data embedded_sdio_data0 = {
         },
 };
 
+
+static unsigned int adam_wifi_status(struct device *dev)
+{
+	return adam_wlan_cd;
+}
+
 struct tegra_sdhci_platform_data adam_wlan_data = {
 //        .clk_id = NULL,
 //        .force_hs = 0,
 	.mmc_data = {
         	.register_status_notify = adam_wifi_status_register,
-//		.embedded_sdio = &embedded_sdio_data0,
-//		.built_in = 1,
+		.embedded_sdio = &embedded_sdio_data0,
+		.built_in = 1,
+		.status = adam_wifi_status,
 	},
 	.cd_gpio = -1,
 	.wp_gpio = -1,
@@ -138,7 +145,9 @@ static int adam_wifi_power(int on)
 
 static int adam_wifi_reset(int on)
 {
-        pr_debug("%s: do nothing\n", __func__);
+	gpio_set_value(ADAM_WLAN_RESET, !on);
+        pr_debug("%s: %d\n", __func__, on);
+//	pr_debug("%s: do nothing, on = %d\n", __func__, on);
         return 0;
 }
 
