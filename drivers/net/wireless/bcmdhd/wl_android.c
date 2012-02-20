@@ -373,7 +373,6 @@ onretry:
 ////////////////////////////////// Adam Patch /////////////////////////////////////
 	if (ret == -EIO && retry < 5) {
 		wl_android_wifi_off(dev);
-		msleep(1000);
 		printk("I/O Error on wifi, power down and try again. Attempt %d/5\n", retry);
 		goto onretry;
 	}
