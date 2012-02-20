@@ -527,6 +527,38 @@ static int __init early_mem(char *p)
 }
 early_param("mem", early_mem);
 
+// This workaround works for the Adam.
+// Untested on other platforms...
+static int __init early_nvmem(char *p)
+{
+	unsigned long size;
+        phys_addr_t start;
+	struct membank *bank;
+	char *endp;
+	unsigned long Check;
+	
+	if (meminfo.nr_banks == 0) {
+		printk(KERN_ERR "Unable to handle nvmem boot parameter: \
+			No previous banks to append to!\n");
+		return 0;
+	}
+
+	bank = &meminfo.bank[meminfo.nr_banks - 1];
+	start = PHYS_OFFSET;
+	size  = memparse(p, &endp);
+		 start = memparse(endp + 1, NULL);
+	Check = start;
+	if (bank->size  == (Check & PAGE_MASK)) {
+		printk(KERN_INFO "Appending nvmem onto bank %d\n", meminfo.nr_banks - 1);
+		bank->size = (bank->size + size) & PAGE_MASK;
+	} else {
+		printk("nvmem does not align to last bank. Skip append. \n");
+	}
+
+	return 0;
+}
+early_param("nvmem", early_nvmem);
+
 static void __init
 setup_ramdisk(int doload, int prompt, int image_start, unsigned int rd_sz)
 {
