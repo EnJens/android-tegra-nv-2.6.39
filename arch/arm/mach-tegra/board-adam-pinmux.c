@@ -255,7 +255,7 @@ static struct tegra_gpio_table gpio_table[] = {
 	{ .gpio = ADAM_EN_VDD_PANEL,		.enable = true },
 	{ .gpio = ADAM_BL_VDD,			.enable = true },
 	{ .gpio = ADAM_BL_PWM,			.enable = false }, /* We want the PWM function here! */
-	{ .gpio = ADAM_HDMI_ENB,			.enable = true },
+//	{ .gpio = ADAM_HDMI_ENB,			.enable = true },
 	{ .gpio = ADAM_HDMI_HPD,			.enable = true },
 	{ .gpio = ADAM_ENABLE_VDD_VID,	.enable = true },
 	{ .gpio = ADAM_SDHC_CD,			.enable = true },

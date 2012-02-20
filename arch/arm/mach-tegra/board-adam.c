@@ -336,8 +336,7 @@ static struct tegra_ehci_platform_data adam_ehci2_ulpi_platform_data = {
 static struct usb_phy_plat_data tegra_usb_phy_pdata[] = {
 	[0] = {
 			.instance = 0,
-			//.vbus_irq = TPS6586X_INT_BASE + TPS6586X_INT_USB_DET,
-			.vbus_gpio = ADAM_USB0_VBUS,
+			.vbus_irq = TPS6586X_INT_BASE + TPS6586X_INT_USB_DET,
 	},
 	[1] = {
 			.instance = 1,
@@ -379,43 +378,14 @@ static void adam_board_suspend(int lp_state, enum suspend_stage stg)
                 tegra_console_uart_suspend();
 }
 
-static void adam_board_resume(int lp_state, enum resume_stage stg)
-{
-        if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_RESUME_AFTER_CPU))
-                tegra_console_uart_resume();
-}
-
-
-static struct tegra_suspend_platform_data adam_suspend = {
-	.cpu_timer = 2000,
-	.cpu_off_timer = 100,
-	.core_timer = 0x7e7e,
-	.core_off_timer = 0xf,
-        .corereq_high = false,
-	.sysclkreq_high = true,
-	.suspend_mode = TEGRA_SUSPEND_LP0,
-        .board_suspend = adam_board_suspend,
-        .board_resume = adam_board_resume,
-
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,38) /* NB: 2.6.39+ handles this automatically */
-	.separate_req = true,	
-	.wake_enb = ADAM_WAKE_KEY_POWER | 
-				ADAM_WAKE_KEY_RESUME | 
-				TEGRA_WAKE_RTC_ALARM,
-	.wake_high = TEGRA_WAKE_RTC_ALARM,
-	.wake_low = ADAM_WAKE_KEY_POWER | 
-				ADAM_WAKE_KEY_RESUME,
-	.wake_any = 0,
-#endif
-};
-
 
 static void adam_usb_init(void)
 {
-	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
-	/* OTG should be the first to be registered */
 	//gpio_request(ADAM_USB0_VBUS, "USB0 VBUS");
 	//gpio_direction_output(ADAM_USB0_VBUS, 0 );
+
+	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
+	/* OTG should be the first to be registered */
 
 	tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
 	platform_device_register(&tegra_otg_device);
@@ -431,35 +401,13 @@ static void adam_usb_init(void)
 
 static void __init tegra_adam_init(void)
 {
-	struct clk *clk;
-	struct resource *res;
-	       void __iomem *pmc = IO_ADDRESS(TEGRA_PMC_BASE);
-        void __iomem *chip_id = IO_ADDRESS(TEGRA_APB_MISC_BASE) + 0x804;
-        u32 pmc_ctrl;
-        u32 minor;
 
-        minor = (readl(chip_id) >> 16) & 0xf;
-        /* A03 (but not A03p) chips do not support LP0 */
-        if (minor == 3 && !(tegra_spare_fuse(18) || tegra_spare_fuse(19)))
-                adam_suspend.suspend_mode = TEGRA_SUSPEND_LP1;
-	printk("Debug: Suspend Data, %x, %d, %d", minor, !!tegra_spare_fuse(18),
-							!!tegra_spare_fuse(19));
-
-        /* configure the power management controller to trigger PMU
-         * interrupts when low */
-        pmc_ctrl = readl(pmc + PMC_CTRL);
-        writel(pmc_ctrl | PMC_CTRL_INTR_LOW, pmc + PMC_CTRL);
+       struct clk *clk;
+       struct resource *res;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)	
 	tegra_common_init();
 #endif
-
-	/* force consoles to stay enabled across suspend/resume */
-	// console_suspend_enabled = 0;	
-
-	/* Init the suspend information */
-	
-	tegra_init_suspend(&adam_suspend);
 
 	/* Set the SDMMC1 (wifi) tap delay to 6.  This value is determined
 	 * based on propagation delay on the PCB traces. */
