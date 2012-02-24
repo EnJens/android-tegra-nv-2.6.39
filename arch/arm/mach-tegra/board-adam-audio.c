@@ -121,6 +121,7 @@ static struct i2c_board_info __initdata adam_i2c_bus0_board_info[] = {
 static struct tegra_alc5623_platform_data adam_audio_pdata = {
         .gpio_spkr_en           = -2,
         .gpio_hp_det            = ADAM_HP_DETECT,
+	.gpio_int_mic_en 	= ADAM_INT_MIC_EN,
 };
 
 static struct platform_device tegra_generic_codec = {
