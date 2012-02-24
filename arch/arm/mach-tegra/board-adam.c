@@ -291,112 +291,12 @@ int adam_bt_wifi_gpio_set(bool on)
 }
 EXPORT_SYMBOL_GPL(adam_bt_wifi_gpio_set);
 
-static struct tegra_utmip_config utmi_phy_config[] = {
-	[0] = {
-		.hssync_start_delay = 0,
-		.idle_wait_delay 	= 17,
-		.elastic_limit 		= 16,
-		.term_range_adj 	= 6, 	/*  xcvr_setup = 9 with term_range_adj = 6 gives the maximum guard around */
-		.xcvr_setup 		= 9, 	/*  the USB electrical spec. This is true across fast and slow chips, high */
-									/*  and low voltage and hot and cold temperatures */
-		.xcvr_lsfslew 		= 2,	/*  -> To slow rise and fall times in low speed eye diagrams in host mode */
-		.xcvr_lsrslew 		= 2,	/*                                                                        */
-	},
-	[1] = {
-		.hssync_start_delay = 0,
-		.idle_wait_delay 	= 17,
-		.elastic_limit 		= 16,
-		.term_range_adj 	= 6,	/*  -> xcvr_setup = 9 with term_range_adj = 6 gives the maximum guard around */
-		.xcvr_setup 		= 9,	/*     the USB electrical spec. This is true across fast and slow chips, high */
-									/*     and low voltage and hot and cold temperatures */
-		.xcvr_lsfslew 		= 2,	/*  -> To slow rise and fall times in low speed eye diagrams in host mode */
-		.xcvr_lsrslew 		= 2,	/*                                                                        */
-	},
-};
-
-/* ULPI is managed by an SMSC3317 on the Harmony board */
-static struct tegra_ulpi_config ulpi_phy_config = {
-	// Is this even right?
-	.reset_gpio = TEGRA_GPIO_PG2,
-	.clk = "cdev2",
-};
-
-static struct tegra_ulpi_config adam_ehci2_ulpi_phy_config = {
-	//.reset_gpio = ADAM_USB1_RESET,
-	.clk = "cdev2",
-};
-
-static struct tegra_ehci_platform_data adam_ehci2_ulpi_platform_data = {
-	.operating_mode = TEGRA_USB_HOST,
-	.power_down_on_bus_suspend = 1,
-	.phy_config = &adam_ehci2_ulpi_phy_config,
-	.phy_type = TEGRA_USB_PHY_TYPE_LINK_ULPI,
-};
-
-static struct usb_phy_plat_data tegra_usb_phy_pdata[] = {
-	[0] = {
-			.instance = 0,
-			.vbus_irq = TPS6586X_INT_BASE + TPS6586X_INT_USB_DET,
-	},
-	[1] = {
-			.instance = 1,
-			.vbus_gpio = -1,
-	},
-	[2] = {
-			.instance = 2,
-			.vbus_gpio = -1,
-	},
-};
-
-static struct tegra_ehci_platform_data tegra_ehci_pdata[] = {
-	[0] = {
-			.phy_config = &utmi_phy_config[0],
-			.operating_mode = TEGRA_USB_OTG,
-			.power_down_on_bus_suspend = 0,
-	},
-	[1] = {
-			.phy_config = &ulpi_phy_config,
-			.operating_mode = TEGRA_USB_HOST,
-			.power_down_on_bus_suspend = 1,
-			.phy_type = TEGRA_USB_PHY_TYPE_LINK_ULPI,
-	},
-	[2] = {
-			.phy_config = &utmi_phy_config[1],
-			.operating_mode = TEGRA_USB_HOST,
-			.power_down_on_bus_suspend = 1,
-	},
-};
-
-static struct tegra_otg_platform_data tegra_otg_pdata = {
-	.ehci_device = &tegra_ehci1_device,
-	.ehci_pdata = &tegra_ehci_pdata[0],
-};
-
 static void adam_board_suspend(int lp_state, enum suspend_stage stg)
 {
         if ((lp_state == TEGRA_SUSPEND_LP1) && (stg == TEGRA_SUSPEND_BEFORE_CPU))
                 tegra_console_uart_suspend();
 }
 
-
-static void adam_usb_init(void)
-{
-	//gpio_request(ADAM_USB0_VBUS, "USB0 VBUS");
-	//gpio_direction_output(ADAM_USB0_VBUS, 0 );
-
-	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
-	/* OTG should be the first to be registered */
-
-	tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
-	platform_device_register(&tegra_otg_device);
-
-	platform_device_register(&tegra_udc_device);
-//	platform_device_register(&tegra_ehci1_device);
-
-	tegra_ehci3_device.dev.platform_data = &tegra_ehci_pdata[2];
-	platform_device_register(&tegra_ehci3_device);
-
-}
 
 
 static void __init tegra_adam_init(void)
@@ -438,7 +338,6 @@ static void __init tegra_adam_init(void)
 	adam_power_register_devices();
 	
 	/* Register the USB device */
-	//adam_usb_register_devices();
 	adam_usb_init();
 
 	/* Register UART devices */

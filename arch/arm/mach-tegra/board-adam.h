@@ -91,21 +91,6 @@
  */
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* #define ADAM_EMC_SAMSUNG		*/
 /* #define ADAM_EMC_ELPIDA50NM	*/
 /* #define ADAM_EMC_ELPIDA40NM	*/
@@ -151,24 +136,6 @@
 #define PMU_IRQ_RTC_ALM1 	(TPS6586X_INT_BASE + TPS6586X_INT_RTC_ALM1)
 
 
-
-// TODO: Find whether there are any definitions for these?
-/*#define ADAM_SDIO0_CD		TEGRA_GPIO_PI5
-#define ADAM_SDIO0_POWER	TEGRA_GPIO_PD0*/	/* SDIO0 and SDIO2 power */
-
-
-
-
-
-//#define ADAM_TS_DISABLE	TEGRA_GPIO_PAA6 /* 0=enabled */
-
-//#define ADAM_FB_NONROTATE TEGRA_GPIO_PH1 /*1 = screen rotation locked */
-
-
-
-
-
-
 #define ADAM_NVEC_I2C_ADDR 0x8a 			/* I2C address of Tegra, when acting as I2C slave */
 
 
@@ -188,7 +155,7 @@ extern void adam_init_emc(void);
 extern void adam_pinmux_init(void);
 extern void adam_clks_init(void);
 
-extern int adam_usb_register_devices(void);
+extern int adam_usb_init(void);
 extern int adam_audio_register_devices(void);
 extern int adam_jack_register_devices(void);
 extern int adam_gpu_register_devices(void);
