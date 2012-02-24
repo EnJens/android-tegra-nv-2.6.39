@@ -171,6 +171,7 @@ static struct tegra_sdhci_platform_data tegra_sdhci_platform_data4 = {
 	.wp_gpio = -1,
 	.power_gpio = -1,
 	.has_no_vreg = 1,
+	.is_8bit = 1,
 };
 
 

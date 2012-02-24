@@ -267,7 +267,7 @@ static struct tegra_gpio_table gpio_table[] = {
 	{ .gpio = ADAM_WLAN_POWER,		.enable = true },
 	{ .gpio = ADAM_WLAN_RESET,		.enable = true },
 	{ .gpio = ADAM_LOW_BATT,		.enable = true },
-	{ .gpio = ADAM_IN_S3,			.enable = true },
+//	{ .gpio = ADAM_IN_S3,			.enable = true },
 /*	{ .gpio = ADAM_USB1_RESET,		.enable = true },*/
 	{ .gpio = ADAM_HP_DETECT,		.enable = true },
 };
