@@ -527,8 +527,10 @@ static int __init early_mem(char *p)
 }
 early_param("mem", early_mem);
 
-// This workaround works for the Adam.
-// Untested on other platforms...
+/* The kernel no longer uses the nvram parameter
+ * This workaround works for the Adam.
+ * Untested on other platforms...
+ */
 static int __init early_nvmem(char *p)
 {
 	unsigned long size;
