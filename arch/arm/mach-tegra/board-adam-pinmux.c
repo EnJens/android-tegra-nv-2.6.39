@@ -270,6 +270,7 @@ static struct tegra_gpio_table gpio_table[] = {
 //	{ .gpio = ADAM_IN_S3,			.enable = true },
 /*	{ .gpio = ADAM_USB1_RESET,		.enable = true },*/
 	{ .gpio = ADAM_HP_DETECT,		.enable = true },
+	{ .gpio = ADAM_INT_MIC_EN,		.enable = true },
 };
 
 void __init adam_pinmux_init(void)
