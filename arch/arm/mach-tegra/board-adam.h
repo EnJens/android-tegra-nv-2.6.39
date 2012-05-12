@@ -117,8 +117,8 @@
 
 #define DYNAMIC_GPU_MEM 1						/* use dynamic memory for GPU */
 
-/*#define ADAM_48KHZ_AUDIO*/ /* <- define this if you want 48khz audio sampling rate instead of 44100Hz */
-
+#define ADAM_48KHZ_AUDIO /* <- define this if you want 48khz audio sampling rate instead of 44100Hz */
+/*#define USE_ORG_DAS 1*/
 
 // TPS6586x GPIOs as registered 
 #define PMU_GPIO_BASE		(TEGRA_NR_GPIOS) 
