@@ -17,9 +17,16 @@
  * GNU General Public License for more details.
  *
  */
-
+#include "../../board-adam.h"
+ 
 struct tegra_alc5623_platform_data {
 	int gpio_spkr_en;
 	int gpio_hp_det;
 	int gpio_int_mic_en;
+#ifndef USE_ORG_DAS
+	int  hifi_codec_datafmt;/* HiFi codec data format */
+	bool hifi_codec_master;/* If Hifi codec is master */
+	int  bt_codec_datafmt;	/* Bluetooth codec data format */
+	bool bt_codec_master;	/* If bt codec is master */
+#endif	
 };
