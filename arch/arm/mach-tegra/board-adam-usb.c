@@ -76,6 +76,10 @@ hub-less systems.
 #include "gpio-names.h"
 #include "devices.h"
 
+#define SET_USBD_RST 22
+#define CLR_USBD_RST 22
+#define CLK_RST_CONTROLLER_RST_DEV_L_SET_0 0x300
+#define CLK_RST_CONTROLLER_RST_DEV_L_CLR_0 0x304
 
 static struct tegra_utmip_config utmi_phy_config[] = {
 	[0] = {
@@ -155,9 +159,14 @@ static struct tegra_otg_platform_data tegra_otg_pdata = {
 	.ehci_pdata = &tegra_ehci_pdata[0],
 };
 
+static void  __iomem *rst_device_reg = IO_ADDRESS(TEGRA_CLK_RESET_BASE);
 
 int adam_usb_init(void)
 {
+	/* USB Plugged in on boot device hang fix */
+	writel(1 << SET_USBD_RST, (u32)rst_device_reg + CLK_RST_CONTROLLER_RST_DEV_L_SET_0);
+	udelay(5);
+	writel(1 << CLR_USBD_RST, (u32)rst_device_reg + CLK_RST_CONTROLLER_RST_DEV_L_CLR_0);
 
 	tegra_usb_phy_init(tegra_usb_phy_pdata, ARRAY_SIZE(tegra_usb_phy_pdata));
 	/* OTG should be the first to be registered */
